@@ -1,0 +1,12 @@
+#!/bin/bash
+for f in `find -name ".git"`; do
+  dir=$(dirname $f)
+  patch=`git -C $dir diff`
+  if [ "$patch" != "" ]; then
+    echo "echo $dir"
+    echo "git -C $dir checkout ."
+    echo "patch -p1 -d $dir <<'EOF'"
+    echo "$patch"
+    echo EOF
+  fi
+done
