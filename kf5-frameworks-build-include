@@ -1,0 +1,100 @@
+# Module definitions for building KDE Frameworks 5
+# (cmake, KF5's dependencies, KDE Frameworks 5)
+
+# Usage: Write your own kdesrc-buildrc with only a "global" section
+# then include this file, like this:
+#
+# include extragear/utils/kdesrc-build/kf5-qt5-build-include
+# (or using a full path)
+#
+# You can then add additional modules if desired.
+#
+# This file uses "branch groups" to decide which git branch to use. If you
+# need to add your framework or library here please be sure to update
+# kde-build-metadata repo's "logical-module-structure". It includes a simple
+# tool you can use to validate your change works (or just "kdesrc-build -p
+# your-module" and look for the right branch).
+
+# ============================ Dependencies ==========================
+
+module libdbusmenu-qt
+    # The lp: prefix refers to Canonical's Launchpad repository
+    repository bzr://lp:libdbusmenu-qt
+end module
+
+module taglib
+    repository git://github.com/taglib/taglib.git
+    branch master
+
+    # ASF/MP4 options are required for Amarok. Also need to force shared libs
+    cmake-options -DWITH_ASF=TRUE -DWITH_MP4=TRUE -DBUILD_SHARED_LIBS=TRUE
+end module
+
+# kdesrc-build itself, and some "kdesupport" modules needed by KF5, workspace or apps.
+module-set
+    repository kde-projects
+    use-modules kdesrc-build kde-dev-scripts extra-cmake-modules polkit-qt-1 qca
+end module-set
+
+module-set phonon
+    repository kde-projects
+    cmake-options -DPHONON_BUILD_PHONON4QT5=ON
+    # We avoid using just "phonon" as kdesrc-build will include all submodules
+    # that have phonon as part of their path. (i.e. it means phonon/*), but we
+    # don't want all the phonon backends.
+    use-modules phonon/phonon phonon-vlc phonon-gstreamer
+end module-set
+
+# ============================= KDE Frameworks ========================
+
+module-set frameworks
+    repository kde-projects
+    use-modules frameworks
+    # The CodeBlocks generator allows usage in QtCreator, while still generating Makefiles
+    # if you use Make as build system add to cmake-options -G "CodeBlocks - Unix Makefiles"
+    # if you use Ninja as build system add to cmake-options -G "CodeBlocks - Ninja"
+    # see http://www.cmake.org/cmake/help/v3.0/generator/CodeBlocks.html
+    cmake-options -DBUILD_TESTING=FALSE
+    tag v5.53.0
+end module-set
+
+# Set some options for the module kactivities.
+# This also serves as an example of how to set options for just one module from a module-set...
+# this is useful to have *after* your "include .../kf5-framework-build-include" in your
+# kdesrc-buildrc if you just want to tweak some settings without adding/removing
+# modules.
+options kactivities
+    cmake-options -DKDE4_BUILD_TESTS=TRUE -DBUILD_TESTING=TRUE \
+                  -DKACTIVITIES_ENABLE_EXCEPTIONS=TRUE
+end options
+
+options bluez-qt
+    # Default udev rules dir /lib/udev/rules.d is not writable by regular user
+    cmake-options -DINSTALL_UDEV_RULE:BOOL=OFF
+end options
+
+module grantlee
+    repository https://github.com/steveire/grantlee.git
+    branch master
+end module
+
+# gpgme master requires a recent libgpg-error
+module libgpg-error
+    repository git://git.gnupg.org/libgpg-error.git
+    branch master
+    configure-flags --enable-maintainer-mode
+end module
+
+# gpgme master is currently required for gpgmepp
+module gpgme
+    repository git://git.gnupg.org/gpgme.git
+    branch master
+    configure-flags --enable-maintainer-mode --enable-languages=cpp,qt
+end module
+
+# kirigami is not a framework but used by workspace (e.g. plasma-discover) and apps (e.g. peruse)
+module-set kirigami
+    repository kde-projects
+    use-modules kirigami
+end module-set
+

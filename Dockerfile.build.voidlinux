@@ -1,0 +1,20 @@
+FROM voidlinux/voidlinux-musl
+MAINTAINER Jonathan Schultz <jonathan@schultz.la>
+
+# Can't work out how to make this work dynamically
+ENV http_proxy http://172.17.0.1:3142
+
+RUN xbps-install --update --sync --yes
+RUN xbps-install --yes xtools
+
+RUN git clone https://github.com/void-linux/void-packages && cd void-packages && ./xbps-src binary-bootstrap
+
+RUN xbps-install --yes wget patch
+RUN wget https://github.com/termux/proot/commit/3045a143d6bc954c1f77b255386a4815b5cbab1d.patch
+
+# RUN cd void-packages && ./xbps-src extract proot
+
+RUN xbps-install --yes ncurses-term
+
+
+

@@ -2831,6 +2831,15 @@ index 24f75a4..1da9c15 100644
  generate_export_header(KF5DocTools BASE_NAME KDocTools EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/kdoctools_export.h")
  add_library(KF5::DocTools ALIAS KF5DocTools)
  if (NOT MEINPROC_NO_KARCHIVE)
+@@ -101,7 +101,7 @@ if(MEINPROC_NO_KARCHIVE)
+     add_definitions(-DMEINPROC_NO_KARCHIVE) #we don't have saveToCache when compiling without KArchive, which is used in xslt_kde.cpp
+ else ()
+     set(meinproc_additional_SRCS xslt_kde.cpp)
+-    set(meinproc_additional_LIBS KF5::Archive)
++    set(meinproc_additional_LIBS KF5::Archive libxml2.a libgcrypt.a libgpg-error.a)
+ endif()
+ 
+ add_executable(meinproc5 meinproc.cpp meinproc_common.cpp xslt.cpp ${meinproc_additional_SRCS} ${kdoctoolslog_core_SRCS})
 EOF
 echo ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
