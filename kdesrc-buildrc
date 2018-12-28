@@ -42,7 +42,7 @@ global
 #     set-env PATH /home/kdedev/qt-everywhere-5.11.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     # WTF happened to -lQt5LinuxAccessibilitySupport -lqtfreetype
-    cmake-options -DPulseAudio_LIBRARIES="/home/kdedev/pulseaudio-10.0/debian/libpulse-dev/usr/lib/x86_64-linux-gnu/" -DCMAKE_BUILD_TYPE:STRING=release -DQT_STATICPLUGIN=TRUE -DBUILD_TESTING=FALSE -DTHREADS_PREFER_PTHREAD_FLAG=TRUE -DBUILD_SHARED_LIBS=FALSE -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCMAKE_LINK_SEARCH_START_STATIC="1" -DCMAKE_LINK_SEARCH_END_STATIC="1" -DCMAKE_CXX_FLAGS="-pthread -static -static-libgcc -static-libstdc++ -DQT_STATIC=1 -DQT_STATICPLUGIN=1" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DQt5_DIR=$HOME/qt-everywhere-5.11.3 -DQt5WebKitWidgets_DIR=/home/kdedev/qt-everywhere-5.11.3/lib/x86_64-linux-gnu/cmake/Qt5WebKitWidgets -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3 -DKDE_SKIP_RPATH_SETTINGS=TRUE
+    cmake-options -DPulseAudio_LIBRARIES="/home/kdedev/pulseaudio-10.0/debian/libpulse-dev/usr/lib/x86_64-linux-gnu/" -DCMAKE_BUILD_TYPE:STRING=release -DQT_STATICPLUGIN=TRUE -DBUILD_TESTING=FALSE -DTHREADS_PREFER_PTHREAD_FLAG=TRUE -DBUILD_SHARED_LIBS=FALSE -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCMAKE_LINK_SEARCH_START_STATIC="1" -DCMAKE_LINK_SEARCH_END_STATIC="1" -DCMAKE_CXX_FLAGS="-pthread -static -static-libgcc -static-libstdc++ -DQT_STATIC=1 -DQT_STATICPLUGIN=1 -D_GNU_SOURCE" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DQt5_DIR=$HOME/qt-everywhere-5.11.3 -DQt5WebKitWidgets_DIR=/home/kdedev/qt-everywhere-5.11.3/lib/x86_64-linux-gnu/cmake/Qt5WebKitWidgets -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3 -DKDE_SKIP_RPATH_SETTINGS=TRUE
 
 end global
 
