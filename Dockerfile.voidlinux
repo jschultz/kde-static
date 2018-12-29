@@ -22,23 +22,9 @@ RUN wget -qO- http://download.qt.io/snapshots/ci/qtwebkit/5.212/1515668564/src/s
 
 RUN sudo xbps-install -y base-devel MesaLib-devel freetype-devel fontconfig-devel # libressl-devel 
 
-COPY thread.cpp.patch qt-everywhere-src-5.11.3
-RUN cd qt-everywhere-src-5.11.3 && patch -p0 < thread.cpp.patch
-COPY config.voidlinux.opt qt-everywhere-src-5.11.3/config.opt
-ADD https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.11.3-libressl-2.8.patch /usr/kdedev  && patch -d qt-everywhere-src-5.11.3/qtbase -p1 < qtnetwork-5.11.3-libressl-2.8.patch
-COPY execinfo.h.patch /home/kdedev
-RUN sudo patch -d / -p0 < ~/execinfo.h.patch
-
-RUN cd qt-everywhere-src-5.11.3 && ./configure -redo
-RUN cd qt-everywhere-src-5.11.3 && make -j4 -Oline && make -j4 install
-
 ENV PATH $PATH:$HOME/qt-everywhere-5.11.3/bin:$PATH
 
 RUN sudo xbps-install -y cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel libXcomposite-devel libXrender-devel gstreamer1-devel gst-plugins-base1-devel hyphen-devel libexecinfo-devel
-#?  gst-plugins-good1
-RUN cd qtwebkit-everywhere-src-5.212 && \
-    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=ReleASE -DQt5_DIR=/home/kdedev/qt-everywhere-5.11.3 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.11.3 -DENABLE_SAMPLING_PROFILER=0 && \
-    make -j4 && make -j4 install
 
 # Install patched version of proot
 RUN mkdir temprepo
@@ -51,17 +37,47 @@ RUN sudo xbps-install --repository=/home/kdedev/temprepo --yes proot
 RUN sudo sudo xbps-install --yes xtools
 RUN git clone https://github.com/void-linux/void-packages && cd void-packages && ./xbps-src binary-bootstrap
 
-# Build fontconfig-devel with static library
+# Patch packages
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
-COPY fontconfig-devel.patch /home/kdedev/
-RUN patch -d void-packages/srcpkgs/fontconfig-devel -p0 < fontconfig-devel.patch
-RUN cd void-packages && ./xbps-src pkg fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel
+COPY void-packages.patch /home/kdedev/
+RUN patch -d void-packages -p1 < void-packages.patch
+RUN cd void-packages && ./xbps-src pkg fontconfig-devel 
+RUN cd void-packages && ./xbps-src pkg dbus-devel 
+RUN cd void-packages && ./xbps-src pkg icu-devel 
+RUN cd void-packages && ./xbps-src pkg libxslt-devel 
+RUN cd void-packages && ./xbps-src pkg libgpg-error-devel 
+RUN cd void-packages && ./xbps-src pkg libxcb-devel 
+RUN cd void-packages && ./xbps-src pkg xcb-util-keysyms-devel
 RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel
+
+COPY thread.cpp.patch qt-everywhere-src-5.11.3
+RUN cd qt-everywhere-src-5.11.3 && patch -p0 < thread.cpp.patch
+COPY config.voidlinux.opt qt-everywhere-src-5.11.3/config.opt
+RUN wget https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.11.3-libressl-2.8.patch && patch -d qt-everywhere-src-5.11.3/qtbase -p1 < qtnetwork-5.11.3-libressl-2.8.patch
+COPY execinfo.h.patch /home/kdedev
+RUN sudo patch -d / -p0 < ~/execinfo.h.patch
+
+RUN sudo xbps-install --yes libressl-devel #
+
+RUN cd qt-everywhere-src-5.11.3 && ./configure -redo
+RUN cd qt-everywhere-src-5.11.3 && make -j4 -Oline && make -j4 install
+
+RUN cd qtwebkit-everywhere-src-5.212 && \
+    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=ReleASE -DQt5_DIR=/home/kdedev/qt-everywhere-5.11.3 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.11.3 -DENABLE_SAMPLING_PROFILER=0 && \
+    make -j4 && make -j4 install
 
 # Install kdesrc-build
 RUN sudo xbps-install -y git perl-YAML-LibYAML
 RUN git clone git://anongit.kde.org/kdesrc-build.git
 
+# Install more dependencies
+RUN sudo xbps-install -y ccache libressl-devel \
+    polkit-devel xcb-util-keysyms-devel \
+    phonon-devel \
+    docbook-xml docbook-xsl \
+    libgcrypt-devel \
+    boost-devel
+    
 # Download KDE sources
 RUN mkdir kde
 COPY kdesrc-buildrc.sources       kde
@@ -75,13 +91,6 @@ RUN cd kde && sh git-patch.sh
 
 # Do the KDE build
 COPY kdesrc-buildrc.voidlinux kde/kdesrc-buildrc
-RUN sudo xbps-install -y ccache libressl-devel \
-    polkit-devel xcb-util-keysyms-devel \
-    phonon-devel \
-    docbook-xml docbook-xsl \
-    libgcrypt-devel \
-    boost-devel
-    
 RUN sudo sh -c "echo \!\<arch\> > /usr/lib/libgcc_s.a"
 
 ENV PATH /home/kdedev/qt-everywhere-5.11.3/bin:$PATH
