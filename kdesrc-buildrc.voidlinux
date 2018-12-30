@@ -32,17 +32,15 @@ global
     install-environment-driver true
 
     set-env LIBRARY_PATH /home/kdedev/kde/install/lib/x86_64-linux-gnu:/home/kdedev/qt-everywhere-5.11.3/lib:/home/kdedev/qt-everywhere-5.11.3/plugins/platforms:/usr/lib/x86_64-linux-gnu:/home/kdedev/mesa-17.2.2/debian/tmp/usr/lib/x86_64-linux-gnu:/home/kdedev/lcms2-2.7/debian/tmp/usr/lib/x86_64-linux-gnu:/home/kdedev/nss-3.32/dist/lib
-    
-#     set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -lqtlibpng -lqtharfbuzz -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static
-#     set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -licui18n -licuuc -lglib-2.0 -ldl -licudata -lqtlibpng -lqtharfbuzz -ldbus-1 -ldl -lgnutls -ltasn1 -lcrypto -lnettle -lhogweed -lgmp -lz -lidn -ldl -lffi -lXau -lXdmcp -lxml2 -lgcrypt -lgpg-error -lxcb -lXau -lXdmcp -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static -lQt5ThemeSupport -lQt5ServiceSupport -lltdl -lQt5FontDatabaseSupport -lfreetype -lXrender -lX11-xcb -lfontconfig -lexpat -lbsd -lQt5EdidSupport -lGL -lglapi -llcms2 -ljpeg -lcertdb -lsmime -lnss -lpk11wrap -lcryptohi -lcryptohi -lnssutil -lnspr4 -lplc4 -lcerthi -ljbig -lnsspki -lplds4 -lnssb -lnssdev -lpkixtop -lnss -lplc4 -lpkixutil -lpkixsystem -lpkixchecker -lpkixresults -lpkixpki -lpkixmodule -lpkixcertsel -lpkixstore -lpkixcrlsel -lpkixparams -lnspr4 -lplc4
-    set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -lglib-2.0 -ldl -lqtlibpng -lqtharfbuzz -ldl -lcrypto -lz -ldl -lffi -lXau -lXdmcp -lXau -lXdmcp -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static -lQt5ThemeSupport -lQt5ServiceSupport -lQt5FontDatabaseSupport -lQt5Gui -lX11 -lQt5DBus -lfreetype -lXrender -lX11-xcb -lexpat -lQt5EdidSupport -ljpeg -lQt5FontDatabaseSupport -lfontconfig -luuid -lexpat -lfreetype -ldbus-1 -licui18n -licuuc -licudata -lssl -lcrypto -lgpg-error
-    
+
+    set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -lglib-2.0 -ldl -lqtlibpng -lqtharfbuzz -ldl -lcrypto -lz -ldl -lffi -lXau -lXdmcp -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static -lxcb -lXdmcp -lXau -lQt5ThemeSupport -lQt5ServiceSupport -lQt5FontDatabaseSupport -lQt5Gui -lQt5DBus -lfreetype -lXrender -lX11 -lX11-xcb -lexpat -lQt5EdidSupport -ljpeg -lQt5FontDatabaseSupport -lfontconfig -luuid -lexpat -lfreetype -ldbus-1 -licui18n -licuuc -licudata -lssl -lcrypto -lgpg-error
+
     set-env QT_STATICPLUGIN TRUE
 
 #     set-env PATH /home/kdedev/qt-everywhere-5.11.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
     # WTF happened to -lQt5LinuxAccessibilitySupport -lqtfreetype
-    cmake-options -DPulseAudio_LIBRARIES="/home/kdedev/pulseaudio-10.0/debian/libpulse-dev/usr/lib/x86_64-linux-gnu/" -DCMAKE_BUILD_TYPE:STRING=release -DQT_STATICPLUGIN=TRUE -DBUILD_TESTING=FALSE -DTHREADS_PREFER_PTHREAD_FLAG=TRUE -DBUILD_SHARED_LIBS=FALSE -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCMAKE_LINK_SEARCH_START_STATIC="1" -DCMAKE_LINK_SEARCH_END_STATIC="1" -DCMAKE_CXX_FLAGS="-pthread -static -static-libgcc -static-libstdc++ -DQT_STATIC=1 -DQT_STATICPLUGIN=1 -D_GNU_SOURCE" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DQt5_DIR=$HOME/qt-everywhere-5.11.3 -DQt5WebKitWidgets_DIR=/home/kdedev/qt-everywhere-5.11.3/lib/x86_64-linux-gnu/cmake/Qt5WebKitWidgets -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3 -DKDE_SKIP_RPATH_SETTINGS=TRUE
+    cmake-options -DPulseAudio_LIBRARIES="/home/kdedev/pulseaudio-10.0/debian/libpulse-dev/usr/lib/x86_64-linux-gnu/" -DCMAKE_BUILD_TYPE:STRING=release -DQT_STATICPLUGIN=TRUE -DBUILD_TESTING=FALSE -DTHREADS_PREFER_PTHREAD_FLAG=TRUE -DBUILD_SHARED_LIBS=FALSE -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" -DCMAKE_LINK_SEARCH_START_STATIC="1" -DCMAKE_LINK_SEARCH_END_STATIC="1" -DCMAKE_CXX_FLAGS="-pthread -static -static-libgcc -static-libstdc++ -DQT_STATIC=1 -DQT_STATICPLUGIN=1 -D_GNU_SOURCE" -DCMAKE_C_FLAGS="-D_GNU_SOURCE" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DQt5_DIR=$HOME/qt-everywhere-5.11.3 -DQt5WebKitWidgets_DIR=/home/kdedev/qt-everywhere-5.11.3/lib/x86_64-linux-gnu/cmake/Qt5WebKitWidgets -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3 -DKDE_SKIP_RPATH_SETTINGS=TRUE
 
 end global
 

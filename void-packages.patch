@@ -60,6 +60,22 @@ index 3043b531d4..9a386be3e2 100644
  	}
  }
  icu-libs_package() {
+diff --git a/srcpkgs/libGL/patches/glapi-static.patch b/srcpkgs/libGL/patches/glapi-static.patch
+new file mode 100644
+index 0000000000..53fb05d95c
+--- /dev/null
++++ b/srcpkgs/libGL/patches/glapi-static.patch
+@@ -0,0 +1,10 @@
++--- src/mapi/glapi/meson.build.orig
+++++ src/mapi/glapi/meson.build
++@@ -76,6 +76,7 @@
++   c_args : [c_msvc_compat_args, static_glapi_args],
++   dependencies : [dep_thread, dep_selinux],
++   build_by_default : false,
+++  install : true,
++ )
++ 
++ if with_any_opengl and not with_shared_glapi and with_tests
 diff --git a/srcpkgs/libgpg-error/template b/srcpkgs/libgpg-error/template
 index 9fceb9caac..c817b8f464 100644
 --- a/srcpkgs/libgpg-error/template
