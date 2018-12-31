@@ -19,13 +19,22 @@ CMD bash
 RUN sudo xbps-install -y wget xz && \
     wget -qO- http://download.qt.io/official_releases/qt/5.11/5.11.3/single/qt-everywhere-src-5.11.3.tar.xz | tar xJ
 RUN wget -qO- http://download.qt.io/snapshots/ci/qtwebkit/5.212/1515668564/src/submodules/qtwebkit-everywhere-src-5.212.tar.xz | tar xJ
+RUN wget -qO- https://gitlab.com/accounts-sso/libaccounts-qt/-/archive/master/libaccounts-qt-master.tar.gz | tar xJ
 
 RUN sudo xbps-install -y base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel 
 
 ENV PATH $PATH:$HOME/qt-everywhere-5.11.3/bin:$PATH
 
 RUN sudo xbps-install -y cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel libXcomposite-devel libXrender-devel gstreamer1-devel gst-plugins-base1-devel hyphen-devel libexecinfo-devel \
-libSM-devel attr-devel
+libSM-devel attr-devel \
+wayland-devel \
+lmdb-devel \
+giflib-devel \
+ModemManager-devel \
+NetworkManager-devel \
+exiv2-devel \
+qrencode-devel \
+libaccounts-qt5-devel
 
 # Install patched version of proot
 RUN mkdir temprepo
@@ -50,8 +59,10 @@ RUN cd void-packages && ./xbps-src pkg libgpg-error-devel
 RUN cd void-packages && ./xbps-src pkg libxcb-devel 
 RUN cd void-packages && ./xbps-src pkg xcb-util-keysyms-devel
 RUN cd void-packages && ./xbps-src pkg libxml2-devel
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel
-# Also MesaLib-devel libllvm7
+RUN cd void-packages && ./xbps-src pkg libglapi
+RUN cd void-packages && ./xbps-src pkg libllvm7
+
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libEGP libGLES libOSMesa libllvm7
 
 COPY thread.cpp.patch qt-everywhere-src-5.11.3
 RUN cd qt-everywhere-src-5.11.3 && patch -p0 < thread.cpp.patch

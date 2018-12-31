@@ -152,7 +152,7 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 95490cbbc..231185a89 100644
+index 95490cbbc..5b8ef86aa 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,7 +32,7 @@ ecm_setup_version(${PROJECT_VERSION}
@@ -184,18 +184,17 @@ index 95490cbbc..231185a89 100644
  set_package_properties(KDEExperimentalPurpose PROPERTIES
      DESCRIPTION "A framework for services and actions integration"
      PURPOSE "Required for enabling the share menu in Okular"
-@@ -142,8 +146,9 @@ if(BUILD_COVERAGE)
+@@ -142,8 +146,8 @@ if(BUILD_COVERAGE)
  endif()
  
  add_subdirectory( ui )
 -add_subdirectory( shell )
  add_subdirectory( generators )
-+message("generator_libraries ${generator_libraries}")
 +add_subdirectory( shell )
  if(BUILD_TESTING)
     add_subdirectory( autotests )
     add_subdirectory( conf/autotests )
-@@ -247,7 +252,7 @@ ki18n_wrap_ui(okularcore_SRCS
+@@ -247,7 +251,7 @@ ki18n_wrap_ui(okularcore_SRCS
  
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
@@ -204,7 +203,7 @@ index 95490cbbc..231185a89 100644
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
-@@ -400,7 +405,7 @@ ki18n_wrap_ui(okularpart_SRCS
+@@ -400,7 +404,7 @@ ki18n_wrap_ui(okularpart_SRCS
  
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
@@ -297,17 +296,14 @@ index 37cad1f1d..bb7365c43 100644
          /**
           * Opens the document.
 diff --git a/generators/CMakeLists.txt b/generators/CMakeLists.txt
-index 6feec81b3..87d0614ee 100644
+index 6feec81b3..260c6abd9 100644
 --- a/generators/CMakeLists.txt
 +++ b/generators/CMakeLists.txt
-@@ -5,6 +5,24 @@ function(okular_add_generator _target)
+@@ -5,6 +5,21 @@ function(okular_add_generator _target)
      INSTALL_NAMESPACE "okular/generators"
      SOURCES ${ARGN}
    )
-+  set(generator_libraries 
-+    ${generator_libraries}
-+    ${_target}
-+    PARENT_SCOPE)
++  file(APPEND ${CMAKE_BINARY_DIR}/generators_static_list.txt "${_target};")
 +
 +  file(GLOB HEADER "generator_*.h")
 +  file(READ ${HEADER} header)
@@ -325,7 +321,7 @@ index 6feec81b3..87d0614ee 100644
  endfunction()
  
  set(LIBSPECTRE_MINIMUM_VERSION "0.2")
-@@ -103,53 +121,55 @@ set_package_properties("discount" PROPERTIES
+@@ -103,53 +118,53 @@ set_package_properties("discount" PROPERTIES
  if(Poppler_Qt5_FOUND)
    add_subdirectory(poppler)
  endif(Poppler_Qt5_FOUND)
@@ -409,6 +405,10 @@ index 6feec81b3..87d0614ee 100644
 -if(QMobipocket_FOUND)
 -  add_subdirectory(mobipocket)
 -endif()
+-
+-if(discount_FOUND)
+-  add_subdirectory(markdown)
+-endif()
 +# if(QMobipocket_FOUND)
 +#   add_subdirectory(mobipocket)
 +# endif()
@@ -416,11 +416,6 @@ index 6feec81b3..87d0614ee 100644
 +# if(discount_FOUND)
 +#   add_subdirectory(markdown)
 +# endif()
- 
--if(discount_FOUND)
--  add_subdirectory(markdown)
--endif()
-+set(generator_libraries ${generator_libraries} PARENT_SCOPE)
 diff --git a/generators/chm/kio-msits/CMakeLists.txt b/generators/chm/kio-msits/CMakeLists.txt
 index 36e670628..d8061b32b 100644
 --- a/generators/chm/kio-msits/CMakeLists.txt
@@ -447,26 +442,6 @@ index 2de7e1835..f4ee4aedc 100644
  
  class QTextDocument;
  
-diff --git a/generators/poppler/CMakeLists.txt b/generators/poppler/CMakeLists.txt
-index ee52ae5e0..fc5ed0de1 100644
---- a/generators/poppler/CMakeLists.txt
-+++ b/generators/poppler/CMakeLists.txt
-@@ -114,6 +114,7 @@ configure_file(
- 
- include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../..
-+#    ${Poppler_INCLUDE_DIRS}
- )
- 
- ########### next target ###############
-@@ -131,6 +132,7 @@ ki18n_wrap_ui(okularGenerator_poppler_PART_SRCS
- kconfig_add_kcfg_files(okularGenerator_poppler_PART_SRCS conf/pdfsettings.kcfgc )
- 
- okular_add_generator(okularGenerator_poppler ${okularGenerator_poppler_PART_SRCS})
-+set(generator_libraries ${generator_libraries} PARENT_SCOPE)
- 
- target_link_libraries(okularGenerator_poppler okularcore KF5::I18n KF5::Completion Poppler::Qt5 Qt5::Xml)
- 
 diff --git a/generators/poppler/generator_pdf.h b/generators/poppler/generator_pdf.h
 index 4439a1144..46c41a71e 100644
 --- a/generators/poppler/generator_pdf.h
@@ -480,30 +455,6 @@ index 4439a1144..46c41a71e 100644
  
  
  #include <qbitarray.h>
-diff --git a/generators/tiff/CMakeLists.txt b/generators/tiff/CMakeLists.txt
-index a73d853fe..e82ec2b23 100644
---- a/generators/tiff/CMakeLists.txt
-+++ b/generators/tiff/CMakeLists.txt
-@@ -15,6 +15,7 @@ set(okularGenerator_tiff_SRCS
- 
- okular_add_generator(okularGenerator_tiff ${okularGenerator_tiff_SRCS})
- target_link_libraries(okularGenerator_tiff okularcore ${TIFF_LIBRARIES} KF5::I18n)
-+set(generator_libraries ${generator_libraries} PARENT_SCOPE)
- 
- ########### install files ###############
- install( FILES okularTiff.desktop  DESTINATION  ${KDE_INSTALL_KSERVICES5DIR} )
-diff --git a/generators/txt/CMakeLists.txt b/generators/txt/CMakeLists.txt
-index 709771d96..4562b2cc1 100644
---- a/generators/txt/CMakeLists.txt
-+++ b/generators/txt/CMakeLists.txt
-@@ -15,6 +15,7 @@ set(okularGenerator_txt_SRCS
- 
- 
- okular_add_generator(okularGenerator_txt ${okularGenerator_txt_SRCS})
-+set(generator_libraries ${generator_libraries} PARENT_SCOPE)
- 
- target_link_libraries(okularGenerator_txt okularcore Qt5::Core KF5::I18n)
- 
 diff --git a/mobile/components/CMakeLists.txt b/mobile/components/CMakeLists.txt
 index f2529f78a..07acffc13 100644
 --- a/mobile/components/CMakeLists.txt
@@ -531,17 +482,24 @@ index 2866d3737..0c940cf96 100644
          m_dirtyHandler->start( 750 );
      }
 diff --git a/shell/CMakeLists.txt b/shell/CMakeLists.txt
-index 628f74be1..78f2a93e1 100644
+index 628f74be1..30970dff6 100644
 --- a/shell/CMakeLists.txt
 +++ b/shell/CMakeLists.txt
-@@ -18,7 +18,7 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
+@@ -18,12 +18,14 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
  
  add_executable(okular ${okular_SRCS})
  
 -target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash)
-+target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash KF5::Archive okularcore okularpart ${generator_libraries})
++target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash KF5::Archive okularcore okularpart)
  if(TARGET KF5::Activities)
      target_compile_definitions(okular PUBLIC -DWITH_KACTIVITIES=1)
+ 
+ 	target_link_libraries(okular KF5::Activities)
+ endif()
++file (READ "${CMAKE_BINARY_DIR}/generators_static_list.txt" generators_static)
++target_link_libraries(okular okularcore ${generators_static})
+ 
+ install(TARGETS okular ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
  
 diff --git a/shell/main.cpp b/shell/main.cpp
 index 983690d08..3c6dd9ec6 100644
@@ -751,7 +709,7 @@ echo ./source/frameworks/kactivities
 git -C ./source/frameworks/kactivities checkout .
 patch -p1 -d ./source/frameworks/kactivities <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index de39b93..22e0f30 100644
+index fd0bd15..e0403aa 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -43,7 +43,7 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
@@ -794,7 +752,7 @@ echo ./source/frameworks/knewstuff
 git -C ./source/frameworks/knewstuff checkout .
 patch -p1 -d ./source/frameworks/knewstuff <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8f56c46..3cece23 100644
+index 0059d4c..5755561 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -16,7 +16,7 @@ include(KDECMakeSettings)
@@ -839,6 +797,40 @@ EOF
 echo ./source/frameworks/krunner
 git -C ./source/frameworks/krunner checkout .
 patch -p1 -d ./source/frameworks/krunner <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 742ea5c..a42d8ee 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,7 +36,7 @@ ecm_setup_version(PROJECT
+ # Dependencies
+ set(REQUIRED_QT_VERSION 5.9.0)
+ 
+-find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick)
++find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick Sql Svg X11Extras PrintSupport TextToSpeech)
+ 
+ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+@@ -45,6 +45,20 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5Plasma ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5ThreadWeaver ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Declarative ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
++
++find_package(Phonon4Qt5 4.6.60 REQUIRED)
++find_package(XCB COMPONENTS XCB)
+ 
+ set(KRunner_AUTOMOC_MACRO_NAMES "K_EXPORT_PLASMA_RUNNER" "K_EXPORT_RUNNER_CONFIG")
+ if(NOT CMAKE_VERSION VERSION_LESS "3.10.0")
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
 index 83837b0..fadb935 100644
 --- a/src/declarative/CMakeLists.txt
@@ -887,10 +879,10 @@ echo ./source/frameworks/kxmlrpcclient
 git -C ./source/frameworks/kxmlrpcclient checkout .
 patch -p1 -d ./source/frameworks/kxmlrpcclient <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 138eb3989..9fccc424b 100644
+index 329308acd..7fbe1124d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -36,8 +36,11 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
+@@ -36,8 +36,13 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
  )
  
  ########### Find packages ###########
@@ -899,6 +891,8 @@ index 138eb3989..9fccc424b 100644
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5KIO ${KF5_DEP_VERSION} CONFIG REQUIRED)
 +find_package(KF5DBusAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
++find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  
  if(BUILD_TESTING)
     add_definitions(-DBUILD_TESTING)
@@ -907,7 +901,7 @@ echo ./source/frameworks/ktextwidgets
 git -C ./source/frameworks/ktextwidgets checkout .
 patch -p1 -d ./source/frameworks/ktextwidgets <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 46b9a15..bc04af0 100644
+index e233efc..f9bb220 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -31,7 +31,7 @@ ecm_setup_version(PROJECT
@@ -935,7 +929,7 @@ echo ./source/frameworks/kinit
 git -C ./source/frameworks/kinit checkout .
 patch -p1 -d ./source/frameworks/kinit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 037aa1c..d529c50 100644
+index ca6d149..bf12157 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -10,7 +10,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -993,7 +987,7 @@ echo ./source/frameworks/kfilemetadata
 git -C ./source/frameworks/kfilemetadata checkout .
 patch -p1 -d ./source/frameworks/kfilemetadata <<'EOF'
 diff --git a/src/extractors/CMakeLists.txt b/src/extractors/CMakeLists.txt
-index 15399f7..5a37159 100644
+index 15399f7..7aee8a6 100644
 --- a/src/extractors/CMakeLists.txt
 +++ b/src/extractors/CMakeLists.txt
 @@ -1,7 +1,7 @@
@@ -1059,6 +1053,24 @@ index 15399f7..5a37159 100644
  target_link_libraries( kfilemetadata_poextractor
      KF5::FileMetaData
  )
+@@ -107,7 +107,7 @@ DESTINATION ${PLUGIN_INSTALL_DIR}/kf5/kfilemetadata)
+ #
+ # XML
+ #
+-add_library(kfilemetadata_xmlextractor MODULE
++add_library(kfilemetadata_xmlextractor STATIC
+    dublincoreextractor.cpp
+    xmlextractor.cpp
+    ../kfilemetadata_debug.cpp
+@@ -127,7 +127,7 @@ install(
+ #
+ # Postscript DSC
+ #
+-add_library(kfilemetadata_postscriptdscextractor MODULE
++add_library(kfilemetadata_postscriptdscextractor STATIC
+    postscriptdscextractor.cpp
+    ../kfilemetadata_debug.cpp
+ )
 @@ -147,7 +147,7 @@ install(
  #
  
@@ -1111,7 +1123,7 @@ echo ./source/frameworks/khtml
 git -C ./source/frameworks/khtml checkout .
 patch -p1 -d ./source/frameworks/khtml <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b0b6e52..c679b11 100644
+index d5fdf01..5e81e4a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -19,7 +19,7 @@ include(ECMQtDeclareLoggingCategory)
@@ -1222,7 +1234,7 @@ echo ./source/frameworks/kirigami
 git -C ./source/frameworks/kirigami checkout .
 patch -p1 -d ./source/frameworks/kirigami <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2182567..678c89c 100644
+index bd49133..9f95605 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,13 +17,13 @@ endif()
@@ -1342,7 +1354,7 @@ echo ./source/frameworks/kdelibs4support
 git -C ./source/frameworks/kdelibs4support checkout .
 patch -p1 -d ./source/frameworks/kdelibs4support <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 42ec947d..4e78b930 100644
+index 152cea79..7e5274ab 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -20,7 +20,7 @@ include(GenerateExportHeader)
@@ -1511,7 +1523,7 @@ echo ./source/frameworks/plasma-framework
 git -C ./source/frameworks/plasma-framework checkout .
 patch -p1 -d ./source/frameworks/plasma-framework <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f2d837efe..539a266d0 100644
+index 1edcd913f..3c30bad57 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -43,7 +43,7 @@ endif()
@@ -1523,7 +1535,7 @@ index f2d837efe..539a266d0 100644
  
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
      COMPONENTS
-@@ -65,11 +65,16 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
+@@ -65,11 +65,17 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
          Notifications
          Package
          Kirigami2
@@ -1536,6 +1548,7 @@ index f2d837efe..539a266d0 100644
  
 +find_package(Phonon4Qt5 4.6.60)
 +find_package(Wayland)
++find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
 +
  set_package_properties(KF5Wayland PROPERTIES DESCRIPTION "Integration with the Wayland compositor"
                         TYPE OPTIONAL
@@ -1787,7 +1800,7 @@ echo ./source/frameworks/kservice
 git -C ./source/frameworks/kservice checkout .
 patch -p1 -d ./source/frameworks/kservice <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b4daaef..6429a5f 100644
+index f09f2c2..872f8c6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -41,7 +41,7 @@ set(APPLICATIONS_MENU_NAME applications.menu
@@ -1842,7 +1855,7 @@ echo ./source/frameworks/knotifyconfig
 git -C ./source/frameworks/knotifyconfig checkout .
 patch -p1 -d ./source/frameworks/knotifyconfig <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0d0b36b..07532a5 100644
+index 66c5782..7bc6254 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
@@ -1892,7 +1905,7 @@ echo ./source/frameworks/kcmutils
 git -C ./source/frameworks/kcmutils checkout .
 patch -p1 -d ./source/frameworks/kcmutils <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8877766..5bb28fe 100644
+index be9c140..07c9fd3 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,7 +17,7 @@ include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
@@ -1926,7 +1939,7 @@ echo ./source/frameworks/kdesu
 git -C ./source/frameworks/kdesu checkout .
 patch -p1 -d ./source/frameworks/kdesu <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9ac92c1..986dcd1 100644
+index b96069d..8199c4c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
@@ -1975,7 +1988,7 @@ echo ./source/frameworks/kiconthemes
 git -C ./source/frameworks/kiconthemes checkout .
 patch -p1 -d ./source/frameworks/kiconthemes <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f7e6d9a..c8924f5 100644
+index 130b040..84da803 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -37,6 +37,7 @@ set(REQUIRED_QT_VERSION 5.9.0)
@@ -2046,7 +2059,7 @@ echo ./source/frameworks/kded
 git -C ./source/frameworks/kded checkout .
 patch -p1 -d ./source/frameworks/kded <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8d056d1..1fbfe27 100644
+index c83112d..73b1762 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -12,7 +12,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -2072,7 +2085,7 @@ echo ./source/frameworks/frameworkintegration
 git -C ./source/frameworks/frameworkintegration checkout .
 patch -p1 -d ./source/frameworks/frameworkintegration <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0148a2a..1722060 100644
+index 1f19262..ff5eaaf 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -23,7 +23,7 @@ include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
@@ -2148,7 +2161,7 @@ echo ./source/frameworks/ktexteditor
 git -C ./source/frameworks/ktexteditor checkout .
 patch -p1 -d ./source/frameworks/ktexteditor <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 7087dec1..d2b1f9de 100644
+index c01692ab..65b46035 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -42,7 +42,8 @@ set(REQUIRED_QT_VERSION 5.9.0)
@@ -2324,7 +2337,7 @@ echo ./source/frameworks/knotifications
 git -C ./source/frameworks/knotifications checkout .
 patch -p1 -d ./source/frameworks/knotifications <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c0f5468..17ca0c8 100644
+index aeab2c7..3dbf23c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -33,7 +33,7 @@ ecm_setup_version(PROJECT
@@ -2355,7 +2368,7 @@ echo ./source/frameworks/kwallet
 git -C ./source/frameworks/kwallet checkout .
 patch -p1 -d ./source/frameworks/kwallet <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 830cb53..b128888 100644
+index 2217330..25c6c2a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -2398,10 +2411,19 @@ echo ./source/frameworks/kmediaplayer
 git -C ./source/frameworks/kmediaplayer checkout .
 patch -p1 -d ./source/frameworks/kmediaplayer <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2f98276..3913996 100644
+index e91520f..6b4f5f9 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -45,10 +45,17 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
+@@ -13,6 +13,8 @@ find_package(ECM 5.53.0  NO_MODULE)
+ set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
+ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
+ 
++find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++
+ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+ 
+ include(KDEInstallDirs)
+@@ -45,10 +47,17 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
  find_package(Qt5Widgets ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
@@ -2425,7 +2447,7 @@ echo ./source/frameworks/kdesignerplugin
 git -C ./source/frameworks/kdesignerplugin checkout .
 patch -p1 -d ./source/frameworks/kdesignerplugin <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index d014e60..90c4500 100644
+index c967812..827615e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -24,6 +24,16 @@ set_package_properties(Qt5Designer PROPERTIES
@@ -2519,7 +2541,7 @@ echo ./source/frameworks/kio
 git -C ./source/frameworks/kio checkout .
 patch -p1 -d ./source/frameworks/kio <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 406c901b..a96bd85b 100644
+index 73b0f8c2..b3ee1fff 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -49,6 +49,12 @@ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
@@ -2688,6 +2710,31 @@ EOF
 echo ./source/frameworks/baloo
 git -C ./source/frameworks/baloo checkout .
 patch -p1 -d ./source/frameworks/baloo <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2f4681f2..11d1453a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -55,8 +55,8 @@ add_feature_info(EXP ${BUILD_EXPERIMENTAL} "Build experimental features")
+ 
+ 
+ # set up build dependencies
+-find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test)
+-find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO)
++find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test X11Extras Svg)
++find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO WindowSystem IconThemes GuiAddons Archive)
+ 
+ find_package(LMDB)
+ set_package_properties(LMDB
+diff --git a/src/codecs/CMakeLists.txt b/src/codecs/CMakeLists.txt
+index 9df77969..1e835129 100644
+--- a/src/codecs/CMakeLists.txt
++++ b/src/codecs/CMakeLists.txt
+@@ -13,3 +13,5 @@ target_link_libraries(KF5BalooCodecs
+     Qt5::Core
+     KF5::CoreAddons
+ )
++
++install(TARGETS KF5BalooCodecs EXPORT KF5BalooTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
 diff --git a/src/kioslaves/kded/CMakeLists.txt b/src/kioslaves/kded/CMakeLists.txt
 index 804c9442..3299787c 100644
 --- a/src/kioslaves/kded/CMakeLists.txt
@@ -2770,7 +2817,7 @@ echo ./source/frameworks/kdewebkit
 git -C ./source/frameworks/kdewebkit checkout .
 patch -p1 -d ./source/frameworks/kdewebkit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4ade679..33ff38b 100644
+index 3c759b1..8d52242 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -2819,7 +2866,7 @@ echo ./source/frameworks/kdoctools
 git -C ./source/frameworks/kdoctools checkout .
 patch -p1 -d ./source/frameworks/kdoctools <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 24f75a4..1da9c15 100644
+index 24f75a4..898523a 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -34,7 +34,7 @@ ecm_qt_declare_logging_category(kdoctoolslog_core_SRCS
@@ -2845,7 +2892,7 @@ echo ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
 patch -p1 -d ./source/frameworks/kxmlgui <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f0d38ab..4801c10 100644
+index 98efa69..e52ef51 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -36,7 +36,7 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
@@ -2891,7 +2938,7 @@ echo ./source/frameworks/kbookmarks
 git -C ./source/frameworks/kbookmarks checkout .
 patch -p1 -d ./source/frameworks/kbookmarks <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index cab1bc3..93aec7c 100644
+index df09ade..f0c9514 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -38,7 +38,7 @@ ecm_setup_version(PROJECT
@@ -2926,7 +2973,7 @@ echo ./source/frameworks/kemoticons
 git -C ./source/frameworks/kemoticons checkout .
 patch -p1 -d ./source/frameworks/kemoticons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 310b9a5..f49d003 100644
+index 9765e23..cfcfb4f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -2965,7 +3012,7 @@ echo ./source/frameworks/kcrash
 git -C ./source/frameworks/kcrash checkout .
 patch -p1 -d ./source/frameworks/kcrash <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6bb7a28..b56ec7d 100644
+index 6af50e4..06a185e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -12,7 +12,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -2982,7 +3029,7 @@ echo ./source/frameworks/qqc2-desktop-style
 git -C ./source/frameworks/qqc2-desktop-style checkout .
 patch -p1 -d ./source/frameworks/qqc2-desktop-style <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5fdac79..f5e0b50 100644
+index c9697df..0163b60 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,9 +32,9 @@ include(KDEInstallDirs)
@@ -3028,10 +3075,10 @@ echo ./source/frameworks/networkmanager-qt
 git -C ./source/frameworks/networkmanager-qt checkout .
 patch -p1 -d ./source/frameworks/networkmanager-qt <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 72b7fcf..f119eef 100644
+index 7975034..1c250c7 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -135,7 +135,7 @@ set(DBUS_INTERFACE_SRCS
+@@ -128,7 +128,7 @@ set(DBUS_INTERFACE_SRCS
      dbus/wirelessdeviceinterface.cpp
  )
  
@@ -3041,11 +3088,25 @@ index 72b7fcf..f119eef 100644
  add_library(KF5::NetworkManagerQt ALIAS KF5NetworkManagerQt)
  
 EOF
+echo ./source/frameworks/prison
+git -C ./source/frameworks/prison checkout .
+patch -p1 -d ./source/frameworks/prison <<'EOF'
+diff --git a/src/quick/CMakeLists.txt b/src/quick/CMakeLists.txt
+index 03cdbb5..3967238 100644
+--- a/src/quick/CMakeLists.txt
++++ b/src/quick/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_library(prisonquickplugin SHARED
++add_library(prisonquickplugin STATIC
+     barcodequickitem.cpp
+     prisonquickplugin.cpp
+ )
+EOF
 echo ./source/frameworks/purpose
 git -C ./source/frameworks/purpose checkout .
 patch -p1 -d ./source/frameworks/purpose <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a4fbd7e..009952e 100644
+index 44e603d..45b4936 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ECM 5.53.0 REQUIRED NO_MODULE)
@@ -3058,7 +3119,7 @@ index a4fbd7e..009952e 100644
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
 @@ -25,7 +25,7 @@ include(ECMQtDeclareLoggingCategory)
- set(KF5_VERSION "5.54.0") # handled by release scripts
+ set(KF5_VERSION "5.53.0") # handled by release scripts
  set(KF5_DEP_VERSION "5.53.0") # handled by release scripts
  
 -find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons I18n Config)
@@ -3097,7 +3158,7 @@ echo ./source/frameworks/kcoreaddons
 git -C ./source/frameworks/kcoreaddons checkout .
 patch -p1 -d ./source/frameworks/kcoreaddons <<'EOF'
 diff --git a/KF5CoreAddonsMacros.cmake b/KF5CoreAddonsMacros.cmake
-index d7cc464..ad21857 100644
+index e762384..cd390cf 100644
 --- a/KF5CoreAddonsMacros.cmake
 +++ b/KF5CoreAddonsMacros.cmake
 @@ -121,7 +121,7 @@ function(kcoreaddons_add_plugin plugin)
@@ -3148,7 +3209,7 @@ echo ./source/frameworks/kross
 git -C ./source/frameworks/kross checkout .
 patch -p1 -d ./source/frameworks/kross <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 22b737d..1c55f67 100644
+index 55cd594..1b2d88b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -30,7 +30,7 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KROSS
@@ -3227,7 +3288,7 @@ echo ./source/frameworks/kwayland
 git -C ./source/frameworks/kwayland checkout .
 patch -p1 -d ./source/frameworks/kwayland <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2ec561c..d93d78a 100644
+index 7f3155f..157d7d5 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -41,6 +41,7 @@ set_package_properties(Wayland PROPERTIES
@@ -3269,7 +3330,7 @@ echo ./source/frameworks/kparts
 git -C ./source/frameworks/kparts checkout .
 patch -p1 -d ./source/frameworks/kparts <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 7ab53ea..cc114e9 100644
+index ba80366..f61c33a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
@@ -3333,7 +3394,7 @@ echo ./source/frameworks/kdeclarative
 git -C ./source/frameworks/kdeclarative checkout .
 patch -p1 -d ./source/frameworks/kdeclarative <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 94f7dbe..c2a20b1 100644
+index dffd476..30186ea 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -14,7 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ECM_MODULE_PATH} ${ECM
@@ -3477,7 +3538,7 @@ echo ./source/frameworks/kcompletion
 git -C ./source/frameworks/kcompletion checkout .
 patch -p1 -d ./source/frameworks/kcompletion <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9808540..ded18ab 100644
+index 8920c20..9b95741 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,7 +32,7 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KCOMPLETION
@@ -3494,10 +3555,18 @@ echo ./source/frameworks/kpeople
 git -C ./source/frameworks/kpeople checkout .
 patch -p1 -d ./source/frameworks/kpeople <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index cb8acb4..db57112 100644
+index 8aa5b88..27d28ec 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -20,6 +20,7 @@ find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
+@@ -13,13 +13,14 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+ 
+ set(REQUIRED_QT_VERSION 5.9.0)
+ 
+-find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml)
++find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml X11Extras)
+ 
+ find_package(KF5CoreAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
+ find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} CONFIG REQUIRED)
@@ -3505,6 +3574,16 @@ index cb8acb4..db57112 100644
  
  include(ECMSetupVersion)
  include(ECMGenerateHeaders)
+diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
+index 6558616..919620e 100644
+--- a/src/declarative/CMakeLists.txt
++++ b/src/declarative/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_library(KF5PeopleDeclarative SHARED
++add_library(KF5PeopleDeclarative STATIC
+                     declarativepersondata.cpp
+                     personactionsmodel.cpp
+                     peopleqmlplugin.cpp)
 diff --git a/src/plugins/akonadi/CMakeLists.txt b/src/plugins/akonadi/CMakeLists.txt
 index 23615bc..7a6d661 100644
 --- a/src/plugins/akonadi/CMakeLists.txt

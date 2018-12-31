@@ -62,10 +62,10 @@ index 3043b531d4..9a386be3e2 100644
  icu-libs_package() {
 diff --git a/srcpkgs/libGL/patches/glapi-static.patch b/srcpkgs/libGL/patches/glapi-static.patch
 new file mode 100644
-index 0000000000..53fb05d95c
+index 0000000000..7bcddc6a04
 --- /dev/null
 +++ b/srcpkgs/libGL/patches/glapi-static.patch
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,21 @@
 +--- src/mapi/glapi/meson.build.orig
 ++++ src/mapi/glapi/meson.build
 +@@ -76,6 +76,7 @@
@@ -76,6 +76,29 @@ index 0000000000..53fb05d95c
 + )
 + 
 + if with_any_opengl and not with_shared_glapi and with_tests
++--- src/mapi/shared-glapi/meson.build.orig
+++++ src/mapi/shared-glapi/meson.build
++@@ -36,7 +36,7 @@
++   capture : true,
++ )
++ 
++-libglapi = shared_library(
+++libglapi = both_libraries(
++   'glapi',
++   [files_mapi_glapi, files_mapi_util, shared_glapi_mapi_tmp_h],
++   c_args : [
+diff --git a/srcpkgs/libGL/template b/srcpkgs/libGL/template
+index a88f847fca..19ded5fa3d 100644
+--- a/srcpkgs/libGL/template
++++ b/srcpkgs/libGL/template
+@@ -94,6 +94,7 @@ libglapi_package() {
+ 	short_desc="Free implementation of the GL API - shared library"
+ 	pkg_install() {
+ 		vmove "usr/lib/libglapi.so.*"
++		vmove "usr/lib/libglapi_static.a"
+ 	}
+ }
+ 
 diff --git a/srcpkgs/libgpg-error/template b/srcpkgs/libgpg-error/template
 index 9fceb9caac..c817b8f464 100644
 --- a/srcpkgs/libgpg-error/template
