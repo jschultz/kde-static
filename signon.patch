@@ -1,0 +1,11 @@
+--- signon.pro.orig	2018-09-17 16:28:27.000000000 +0000
++++ signon.pro	2018-12-31 08:26:48.242848571 +0000
+@@ -1,7 +1,7 @@
+ include( common-vars.pri )
+ 
+ TEMPLATE  = subdirs
+-SUBDIRS   = lib src server tests
++SUBDIRS   = lib
+ src.depends = lib
+ tests.depends = lib src
+ 

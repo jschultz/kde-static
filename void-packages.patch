@@ -179,6 +179,112 @@ index 3daf7ecccc..22d0eaf011 100644
  		vmove usr/share/aclocal
  		vmove usr/share/doc/${sourcepkg}-${version}
  		vmove usr/share/man/man3
+diff --git a/srcpkgs/poppler-qt5/template b/srcpkgs/poppler-qt5/template
+index f300e2fc77..6a998351dd 100644
+--- a/srcpkgs/poppler-qt5/template
++++ b/srcpkgs/poppler-qt5/template
+@@ -7,8 +7,8 @@ pkgname=poppler-qt5
+ version=0.72.0
+ revision=1
+ wrksrc="poppler-${version}"
+-build_style=cmake
+-configure_args="-DENABLE_XPDF_HEADERS=on -DENABLE_GLIB=off
++build_style=meta
++configure_args="-DBUILD_SHARED_LIBS=FALSE -DENABLE_XPDF_HEADERS=on -DENABLE_GLIB=off
+  -DENABLE_QT5=on -DENABLE_UTILS=off -DENABLE_CPP=off"
+ hostmakedepends="pkg-config qt5-devel"
+ makedepends="libpng-devel tiff-devel lcms2-devel libcurl-devel
+@@ -36,7 +36,7 @@ poppler-qt5-devel_package() {
+ 	short_desc+=" - development files"
+ 	pkg_install() {
+ 		vmove usr/include/poppler/qt5
+-		vmove usr/lib/libpoppler-qt5.so
++		vmove usr/lib/libpoppler-qt5.a
+ 		vmove usr/lib/pkgconfig/poppler-qt5.pc
+ 		rm -rf ${DESTDIR}/usr/include
+ 	}
+diff --git a/srcpkgs/poppler/template b/srcpkgs/poppler/template
+index 5b4be172d4..c74bfd8b8b 100644
+--- a/srcpkgs/poppler/template
++++ b/srcpkgs/poppler/template
+@@ -6,7 +6,7 @@ pkgname=poppler
+ version=0.72.0
+ revision=1
+ build_style=cmake
+-configure_args="-DENABLE_XPDF_HEADERS=on $(vopt_if gir -DENABLE_GLIB=on)
++configure_args="-DBUILD_SHARED_LIBS=FALSE -DENABLE_XPDF_HEADERS=on $(vopt_if gir -DENABLE_GLIB=on)
+  -DENABLE_QT5=off"
+ hostmakedepends="pkg-config glib-devel"
+ makedepends="libpng-devel libglib-devel cairo-devel tiff-devel lcms2-devel
+@@ -29,31 +29,15 @@ if [ -z "$CROSS_BUILD" ]; then
+ 	build_options_default="gir"
+ fi
+ 
+-libpoppler83_package() {
+-	depends="poppler-data"
+-	short_desc+=" - poppler runtime library"
+-	pkg_install() {
+-		vmove usr/lib/libpoppler.so.*
+-	}
+-}
+-
+ poppler-cpp-devel_package() {
+ 	depends="libstdc++-devel zlib-devel poppler-devel-${version}_${revision} poppler-cpp-${version}_${revision}"
+ 	short_desc+=" - C++ bindings (development files)"
+ 	pkg_install() {
+-		vmove usr/include/poppler/cpp
+-		vmove usr/lib/libpoppler-cpp.so
++		vmove usr/lib/libpoppler-cpp.a
+ 		vmove usr/lib/pkgconfig/poppler-cpp.pc
+ 	}
+ }
+ 
+-poppler-cpp_package() {
+-	short_desc+=" - C++ bindings"
+-	pkg_install() {
+-		vmove "usr/lib/libpoppler-cpp.so.*"
+-	}
+-}
+-
+ poppler-devel_package() {
+ 	depends="libglib-devel libpoppler83-${version}_${revision}"
+ 	short_desc+=" - development files"
+@@ -62,7 +46,7 @@ poppler-devel_package() {
+ 		vmove usr/include/poppler/splash
+ 		vmove usr/include/poppler/fofi
+ 		vmove usr/include/poppler/goo
+-		vmove usr/lib/libpoppler.so
++		vmove usr/lib/libpoppler.a
+ 		vmove usr/lib/pkgconfig/poppler.pc
+ 		vmove usr/lib/pkgconfig/poppler-splash.pc
+ 	}
+@@ -73,25 +57,12 @@ poppler-glib-devel_package() {
+ 	short_desc+=" - GLib bindings (development files)"
+ 	pkg_install() {
+ 		vmove usr/include/poppler/glib
+-		vmove usr/lib/libpoppler-glib.so
+-		if [ "$build_option_gir" ]; then
+-			vmove usr/share/gir-1.0
+-		fi
++		vmove usr/lib/libpoppler-glib.a
+ 		vmove usr/lib/pkgconfig/poppler-cairo.pc
+ 		vmove usr/lib/pkgconfig/poppler-glib.pc
+ 	}
+ }
+ 
+-poppler-glib_package() {
+-	short_desc+=" - GLib bindings"
+-	pkg_install() {
+-		vmove "usr/lib/libpoppler-glib.so.*"
+-		if [ "$build_option_gir" ]; then
+-			vmove usr/lib/girepository-1.0
+-		fi
+-	}
+-}
+-
+ poppler-utils_package() {
+ 	short_desc+=" - utilities (transitional package)"
+ 	build_style=meta
 diff --git a/srcpkgs/xcb-util-keysyms/template b/srcpkgs/xcb-util-keysyms/template
 index 1f274fc19f..d23ef9428c 100644
 --- a/srcpkgs/xcb-util-keysyms/template

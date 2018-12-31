@@ -31,9 +31,9 @@ global
     # ~/.config/kde-env-master.sh
     install-environment-driver true
 
-    set-env LIBRARY_PATH /home/kdedev/kde/install/lib/x86_64-linux-gnu:/home/kdedev/qt-everywhere-5.11.3/lib:/home/kdedev/qt-everywhere-5.11.3/plugins/platforms:/usr/lib/x86_64-linux-gnu:/home/kdedev/mesa-17.2.2/debian/tmp/usr/lib/x86_64-linux-gnu:/home/kdedev/lcms2-2.7/debian/tmp/usr/lib/x86_64-linux-gnu:/home/kdedev/nss-3.32/dist/lib
+    set-env LIBRARY_PATH /home/kdedev/kde/install/lib/x86_64-linux-gnu:/home/kdedev/qt-everywhere-5.11.3/lib:/home/kdedev/qt-everywhere-5.11.3/plugins/platforms:/usr/lib
     
-    set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -lglib-2.0 -ldl -lqtlibpng -lqtharfbuzz -ldl -lcrypto -lz -ldl -lffi -lXau -lXdmcp -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static -lxcb -lXdmcp -lXau -lQt5ThemeSupport -lQt5ServiceSupport -lQt5FontDatabaseSupport -lQt5Gui -lQt5DBus -lfreetype -lXrender -lX11 -lX11-xcb -lexpat -lQt5EdidSupport -ljpeg -lQt5FontDatabaseSupport -lfontconfig -luuid -lexpat -lfreetype -ldbus-1 -licui18n -licuuc -licudata -lssl -lcrypto -lgpg-error -lglapi_static -lglapi
+    set-env KDE_STANDARD_LIBRARIES -lqtpcre2 -lglib-2.0 -ldl -lqtlibpng -lqtharfbuzz -ldl -lcrypto -lz -ldl -lffi -lXau -lXdmcp -lqxcb -lQt5XcbQpa -lQt5EventDispatcherSupport -lxcb-static -lxcb -lXdmcp -lXau -lQt5ThemeSupport -lQt5ServiceSupport -lQt5FontDatabaseSupport -lQt5Gui -lQt5DBus -lfreetype -lXrender -lX11 -lX11-xcb -lexpat -lQt5EdidSupport -ljpeg -lQt5FontDatabaseSupport -lfontconfig -luuid -lexpat -lfreetype -ldbus-1 -licui18n -licuuc -licudata -lssl -lcrypto -lgpg-error -lglapi_static -lglapi -llcms2 -lopenjp2
     
     set-env QT_STATICPLUGIN TRUE
 

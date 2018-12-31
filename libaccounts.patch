@@ -1,0 +1,11 @@
+--- accounts-qt.pro.orig	2018-05-12 10:31:13.000000000 +0000
++++ accounts-qt.pro	2018-12-31 08:07:37.917215467 +0000
+@@ -2,7 +2,7 @@
+ 
+ TEMPLATE  = subdirs
+ CONFIG   += ordered
+-SUBDIRS  += Accounts tests
++SUBDIRS  += Accounts
+ 
+ include( common-project-config.pri )
+ include( doc/doc.pri )
