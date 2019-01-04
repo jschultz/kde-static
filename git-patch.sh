@@ -597,6 +597,19 @@ index 0d08576..7f84a1f 100644
  kcoreaddons_desktop_to_json(kcm_kaccounts kcm_kaccounts.desktop)
  
  target_link_libraries(kcm_kaccounts
+diff --git a/src/daemon/CMakeLists.txt b/src/daemon/CMakeLists.txt
+index f037684..5271e39 100644
+--- a/src/daemon/CMakeLists.txt
++++ b/src/daemon/CMakeLists.txt
+@@ -4,7 +4,7 @@ set(accounts_daemon_SRCS
+     daemon.cpp
+ )
+ 
+-add_library(kded_accounts MODULE
++add_library(kded_accounts STATIC
+     ${accounts_daemon_SRCS}
+ )
+ kcoreaddons_desktop_to_json(kded_accounts accounts.desktop)
 diff --git a/src/daemon/kio-webdav/CMakeLists.txt b/src/daemon/kio-webdav/CMakeLists.txt
 index f5f5ad4..bf2685e 100644
 --- a/src/daemon/kio-webdav/CMakeLists.txt

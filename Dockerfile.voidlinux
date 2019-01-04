@@ -7,8 +7,6 @@ ENV http_proxy http://172.17.0.1:3142
 RUN xbps-install --update --sync --yes
 RUN xbps-install --yes bash ncurses-term vim
 
-# RUN xbps-install --yes net-tools netcat
-
 RUN xbps-install --yes sudo && echo 'kdedev ALL=NOPASSWD: ALL' >> /etc/sudoers
 RUN useradd kdedev
 USER kdedev
@@ -22,22 +20,12 @@ RUN wget -qO- http://download.qt.io/snapshots/ci/qtwebkit/5.212/1515668564/src/s
 RUN wget -qO- https://gitlab.com/accounts-sso/libaccounts-qt/-/archive/master/libaccounts-qt-master.tar.gz | tar xz
 RUN wget -qO- https://gitlab.com/accounts-sso/signond/-/archive/master/signond-master.tar.gz | tar xz
 
-RUN sudo xbps-install -y base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel
-
-ENV PATH $PATH:$HOME/qt-everywhere-5.11.3/bin:$PATH
-
-RUN sudo xbps-install -y cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel libXcomposite-devel libXrender-devel gstreamer1-devel gst-plugins-base1-devel hyphen-devel libexecinfo-devel \
-libSM-devel attr-devel \
-wayland-devel \
-lmdb-devel \
-giflib-devel \
-ModemManager-devel \
-NetworkManager-devel \
-exiv2-devel \
-qrencode-devel \
-poppler-qt5-devel \
-libopenjpeg2-devel \
-lcms2-devel
+RUN sudo xbps-install --yes \
+        base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel \
+        cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel \
+        libXcomposite-devel libXrender-devel gstreamer1-devel gst-plugins-base1-devel hyphen-devel libexecinfo-devel \
+        libSM-devel attr-devel wayland-devel lmdb-devel giflib-devel ModemManager-devel NetworkManager-devel \
+        exiv2-devel qrencode-devel libopenjpeg2-devel  lcms2-devel
 
 # Install patched version of proot
 RUN mkdir temprepo
@@ -46,54 +34,57 @@ COPY temprepo/x86_64-musl-repodata temprepo
 
 RUN sudo xbps-install --repository=/home/kdedev/temprepo --yes proot
 
-# Prepare to build packates
+# Prepare to build packages
 RUN sudo sudo xbps-install --yes xtools
-RUN git clone https://github.com/void-linux/void-packages && cd void-packages && ./xbps-src binary-bootstrap
+# RUN git clone https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
+COPY void-packages /home/kdedev/void-packages
+RUN sudo chown -R kdedev.kdedev void-packages && cd void-packages && ./xbps-src binary-bootstrap
 
 # Patch packages
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
-COPY void-packages.patch /home/kdedev/
-RUN patch -d void-packages -p1 < void-packages.patch
-RUN cd void-packages && ./xbps-src pkg fontconfig-devel 
-RUN cd void-packages && ./xbps-src pkg dbus-devel 
-RUN cd void-packages && ./xbps-src pkg icu-devel 
-RUN cd void-packages && ./xbps-src pkg libxslt-devel 
-RUN cd void-packages && ./xbps-src pkg libgpg-error-devel 
-RUN cd void-packages && ./xbps-src pkg libxcb-devel 
-RUN cd void-packages && ./xbps-src pkg xcb-util-keysyms-devel
-RUN cd void-packages && ./xbps-src pkg libxml2-devel
-RUN cd void-packages && ./xbps-src pkg libglapi
-RUN cd void-packages && ./xbps-src pkg libllvm7
-RUN cd void-packages && ./xbps-src pkg poppler-devel
-RUN cd void-packages && ./xbps-src pkg poppler-qt5-devel
+# COPY void-packages.patch /home/kdedev/
+# RUN patch -d void-packages -p1 < void-packages.patch
+RUN cd void-packages && ./xbps-src pkg -j4 fontconfig-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 dbus-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 icu-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 libxslt-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 libxcb-devel 
+RUN cd void-packages && ./xbps-src pkg -j4 xcb-util-keysyms-devel
+RUN cd void-packages && ./xbps-src pkg -j4 libxml2-devel
+RUN cd void-packages && ./xbps-src pkg libglapi # Fails with -j4
+RUN cd void-packages && ./xbps-src pkg -j4 libllvm7
+RUN cd void-packages && ./xbps-src pkg -j4 poppler-devel
+RUN cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel
 
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libEGP libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel
 
+# Patch QT
 COPY thread.cpp.patch qt-everywhere-src-5.11.3
 RUN cd qt-everywhere-src-5.11.3 && patch -p0 < thread.cpp.patch
-COPY config.voidlinux.opt qt-everywhere-src-5.11.3/config.opt
 RUN wget https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.11.3-libressl-2.8.patch && patch -d qt-everywhere-src-5.11.3/qtbase -p1 < qtnetwork-5.11.3-libressl-2.8.patch
 COPY execinfo.h.patch /home/kdedev
 RUN sudo patch -d / -p0 < ~/execinfo.h.patch
 
-RUN cd qt-everywhere-src-5.11.3 && ./configure -redo
-RUN cd qt-everywhere-src-5.11.3 && make -j4 -Oline && make -j4 install
+COPY config.voidlinux.opt qt-everywhere-src-5.11.3/config.opt
+RUN cd qt-everywhere-src-5.11.3 && ./configure -redo && make -j4 -Oline && make -j4 install
+ENV PATH $PATH:/home/kdedev/qt-everywhere-5.11.3/bin
 
 RUN cd qtwebkit-everywhere-src-5.212 && \
-    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=ReleASE -DQt5_DIR=/home/kdedev/qt-everywhere-5.11.3 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.11.3 -DENABLE_SAMPLING_PROFILER=0 && \
+    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=ReleASE -DQt5_DIR=/home/kdedev/qt-everywhere-5.11.3 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.11.3 -DENABLE_SAMPLING_PROFILER=0 -DUSE_THIN_ARCHIVES=OFF && \
     make -j4 && make -j4 install
 
+RUN sudo xbps-install --yes libaccounts-glib-devel doxygen
 COPY libaccounts.patch /home/kdedev
 RUN cd libaccounts-qt-master && \
     patch -p0 < /home/kdedev/libaccounts.patch && \
     qmake PREFIX=/home/kdedev/qt-everywhere-5.11.3 && \
-    make -j4 -Oline && make install
-RUN xbps-install --yes doxygen
+    make -j4 -Oline && make -j4 install
 COPY signon.patch /home/kdedev
 RUN cd signond-master && \
     patch -p0 < /home/kdedev/signon.patch && \
     qmake PREFIX=/home/kdedev/qt-everywhere-5.11.3 && \
-    make -j4 -Oline && make install
+    make -j4 -Oline && make -j4 install
 
 # Install kdesrc-build
 RUN sudo xbps-install -y git perl-YAML-LibYAML
@@ -105,11 +96,6 @@ COPY kdesrc-buildrc.sources       kde
 COPY kf5-frameworks-build-include kde
 RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc.sources --src-only --include-dependencies okular
 
-# Patch KDE sources
-COPY git-patch.sh kde
-COPY build-git-patch kde
-RUN cd kde && sh git-patch.sh
-
 # Install more KDE dependencies
 RUN sudo xbps-install -y ccache \
     polkit-devel \
@@ -117,13 +103,19 @@ RUN sudo xbps-install -y ccache \
     docbook-xml docbook-xsl \
     libgcrypt-devel \
     boost-devel
-    
+
+# Patch KDE sources
+COPY git-patch.sh kde
+COPY build-git-patch kde
+RUN cd kde && sh git-patch.sh
+
 # Do the KDE build
 COPY kdesrc-buildrc.voidlinux kde/kdesrc-buildrc
+
+# Make empty library since build process will try to link with it
 RUN sudo sh -c "echo \!\<arch\> > /usr/lib/libgcc_s.a"
 
-ENV PATH /home/kdedev/qt-everywhere-5.11.3/bin:$PATH
-RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
+RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular
 
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
