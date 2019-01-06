@@ -31,33 +31,28 @@ RUN sudo xbps-install --yes \
 RUN mkdir temprepo
 COPY temprepo/proot-5.1.0_5.x86_64-musl.xbps temprepo
 COPY temprepo/x86_64-musl-repodata temprepo
-
 RUN sudo xbps-install --repository=/home/kdedev/temprepo --yes proot
 
 # Prepare to build packages
 RUN sudo sudo xbps-install --yes xtools
-# RUN git clone https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
-COPY void-packages /home/kdedev/void-packages
-RUN sudo chown -R kdedev.kdedev void-packages && cd void-packages && ./xbps-src binary-bootstrap
+RUN git clone https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
 
-# Patch packages
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
-# COPY void-packages.patch /home/kdedev/
-# RUN patch -d void-packages -p1 < void-packages.patch
-RUN cd void-packages && ./xbps-src pkg -j4 fontconfig-devel 
-RUN cd void-packages && ./xbps-src pkg -j4 dbus-devel 
-RUN cd void-packages && ./xbps-src pkg -j4 icu-devel 
-RUN cd void-packages && ./xbps-src pkg -j4 libxslt-devel 
-RUN cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel 
-RUN cd void-packages && ./xbps-src pkg -j4 libxcb-devel 
+
+RUN cd void-packages && ./xbps-src pkg -j4 fontconfig-devel
+RUN cd void-packages && ./xbps-src pkg -j4 dbus-devel
+RUN cd void-packages && ./xbps-src pkg -j4 icu-devel
+RUN cd void-packages && ./xbps-src pkg -j4 libxslt-devel
+RUN cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel
+RUN cd void-packages && ./xbps-src pkg -j4 libxcb-devel
 RUN cd void-packages && ./xbps-src pkg -j4 xcb-util-keysyms-devel
 RUN cd void-packages && ./xbps-src pkg -j4 libxml2-devel
 RUN cd void-packages && ./xbps-src pkg libglapi # Fails with -j4
 RUN cd void-packages && ./xbps-src pkg -j4 libllvm7
 RUN cd void-packages && ./xbps-src pkg -j4 poppler-devel
 RUN cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel
-
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --ignore-conf-repos --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel
+#??? libpoppler83 is needed?
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel
 
 # Patch QT
 COPY thread.cpp.patch qt-everywhere-src-5.11.3
@@ -115,7 +110,7 @@ COPY kdesrc-buildrc.voidlinux kde/kdesrc-buildrc
 # Make empty library since build process will try to link with it
 RUN sudo sh -c "echo \!\<arch\> > /usr/lib/libgcc_s.a"
 
-RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular
+RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
 
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh

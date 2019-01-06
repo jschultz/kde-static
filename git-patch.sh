@@ -152,7 +152,7 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 95490cbbc..5b8ef86aa 100644
+index 9584e4994..09f361ca6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,7 +32,7 @@ ecm_setup_version(${PROJECT_VERSION}
@@ -634,6 +634,19 @@ index ab35afe..b966c60 100644
 +add_library(kaccountsdeclarativeplugin STATIC kaccountsdeclarativeplugin.cpp
                              ../jobs/createaccount.cpp
                              ../uipluginsmanager.cpp)
+ 
+diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
+index 01d0671..8d8ebd2 100644
+--- a/src/lib/CMakeLists.txt
++++ b/src/lib/CMakeLists.txt
+@@ -35,7 +35,7 @@ ecm_generate_headers(kaccountslib_HEADERS
+   REQUIRED_HEADERS kaccountslib_HEADERS
+ )
+ 
+-add_library (kaccounts SHARED
++add_library (kaccounts STATIC
+              ${kaccountslib_SRCS}
+ )
  
 EOF
 echo ./source/frameworks/sonnet
@@ -1247,7 +1260,7 @@ echo ./source/frameworks/kirigami
 git -C ./source/frameworks/kirigami checkout .
 patch -p1 -d ./source/frameworks/kirigami <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index bd49133..9f95605 100644
+index 2182567..678c89c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,13 +17,13 @@ endif()
