@@ -130,7 +130,7 @@ index bfa258b..34c3cb7 100644
  )
  
 -add_library(qmobipocket SHARED ${QMOBIPOCKET_SRCS})
-+add_library(qmobipocket STATIC ${QMOBIPOCKET_SRCS})
++add_library(qmobipocket ${QMOBIPOCKET_SRCS})
  generate_export_header(qmobipocket)
  
  target_link_libraries (qmobipocket
@@ -152,7 +152,7 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9584e4994..09f361ca6 100644
+index 95490cbbc..5b8ef86aa 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,7 +32,7 @@ ecm_setup_version(${PROJECT_VERSION}
@@ -199,7 +199,7 @@ index 9584e4994..09f361ca6 100644
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
 -add_library(okularcore SHARED ${okularcore_SRCS})
-+add_library(okularcore STATIC ${okularcore_SRCS})
++add_library(okularcore ${okularcore_SRCS})
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
@@ -208,7 +208,7 @@ index 9584e4994..09f361ca6 100644
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
 -add_library(okularpart SHARED ${okularpart_SRCS})
-+add_library(okularpart STATIC ${okularpart_SRCS})
++add_library(okularpart ${okularpart_SRCS})
  generate_export_header(okularpart BASE_NAME okularpart)
  
  target_link_libraries(okularpart okularcore
@@ -464,7 +464,7 @@ index f2529f78a..07acffc13 100644
  kconfig_add_kcfg_files(okular_SRCS ${CMAKE_SOURCE_DIR}/conf/settings.kcfgc )
  
 -add_library(okularplugin SHARED ${okular_SRCS})
-+add_library(okularplugin STATIC ${okular_SRCS})
++add_library(okularplugin ${okular_SRCS})
  set_target_properties(okularplugin PROPERTIES COMPILE_DEFINITIONS "okularpart_EXPORTS")
  target_link_libraries(okularplugin
          Qt5::Quick
@@ -631,7 +631,7 @@ index ab35afe..b966c60 100644
  include_directories(${CMAKE_CURRENT_BINARY_DIR}/.. ${CMAKE_CURRENT_SOURCE_DIR}/..)
  
 -add_library(kaccountsdeclarativeplugin SHARED kaccountsdeclarativeplugin.cpp
-+add_library(kaccountsdeclarativeplugin STATIC kaccountsdeclarativeplugin.cpp
++add_library(kaccountsdeclarativeplugin kaccountsdeclarativeplugin.cpp
                              ../jobs/createaccount.cpp
                              ../uipluginsmanager.cpp)
  
@@ -644,7 +644,7 @@ index 01d0671..8d8ebd2 100644
  )
  
 -add_library (kaccounts SHARED
-+add_library (kaccounts STATIC
++add_library (kaccounts
               ${kaccountslib_SRCS}
  )
  
@@ -866,7 +866,7 @@ index 83837b0..fadb935 100644
  ecm_qt_declare_logging_category(runnermodel_SRCS HEADER krunner_debug.h IDENTIFIER KRUNNER CATEGORY_NAME org.kde.krunner)
  
 -add_library(runnermodelplugin SHARED ${runnermodel_SRCS})
-+add_library(runnermodelplugin STATIC ${runnermodel_SRCS})
++add_library(runnermodelplugin ${runnermodel_SRCS})
  target_link_libraries(runnermodelplugin
          Qt5::Quick
          Qt5::Qml
@@ -896,7 +896,7 @@ index cbb89aa..57f9b40 100644
  
  
 -add_library(proxymodeltestsuite SHARED
-+add_library(proxymodeltestsuite STATIC
++add_library(proxymodeltestsuite
    ${proxymodeltestsuite_SRCS}
    ${eventlogger_RCS_SRCS}
  )
@@ -1260,7 +1260,7 @@ echo ./source/frameworks/kirigami
 git -C ./source/frameworks/kirigami checkout .
 patch -p1 -d ./source/frameworks/kirigami <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2182567..678c89c 100644
+index bd49133..9f95605 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,13 +17,13 @@ endif()
@@ -1540,7 +1540,7 @@ index c05f7a4..2880710 100644
  #set(wtf_LIB_SRCS HashTable.cpp )
  
 -#add_library(wtf SHARED ${wtf_LIB_SRCS})
-+#add_library(wtf STATIC ${wtf_LIB_SRCS})
++#add_library(wtf ${wtf_LIB_SRCS})
  
  #set_target_properties(wtf PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
  #install(TARGETS wtf ${KF5_INSTALL_TARGETS_DEFAULT_ARGS} )
@@ -1653,7 +1653,7 @@ index 9316419cb..d03e0cef1 100644
  )
  
 -add_library(calendarplugin SHARED ${calendar_SRCS})
-+add_library(calendarplugin STATIC ${calendar_SRCS})
++add_library(calendarplugin ${calendar_SRCS})
  
  target_link_libraries(calendarplugin
      Qt5::Core
@@ -1666,7 +1666,7 @@ index 26b5829f6..de1c4de22 100644
  qt5_add_resources(corebindings_SRCS shaders.qrc)
  
 -add_library(corebindingsplugin SHARED ${corebindings_SRCS})
-+add_library(corebindingsplugin STATIC ${corebindings_SRCS})
++add_library(corebindingsplugin ${corebindings_SRCS})
  target_link_libraries(corebindingsplugin
          Qt5::Quick
          Qt5::Qml
@@ -1679,7 +1679,7 @@ index 59ee81309..a6d30f7e3 100644
      )
  
 -add_library(plasmacomponentsplugin SHARED ${plasmacomponents_SRCS})
-+add_library(plasmacomponentsplugin STATIC ${plasmacomponents_SRCS})
++add_library(plasmacomponentsplugin ${plasmacomponents_SRCS})
  target_link_libraries(plasmacomponentsplugin
          Qt5::Core
          Qt5::Quick
@@ -1692,7 +1692,7 @@ index 5b1400020..5c4b128da 100644
      )
  
 -add_library(plasmaextracomponentsplugin SHARED ${plasmaextracomponents_SRCS})
-+add_library(plasmaextracomponentsplugin STATIC ${plasmaextracomponents_SRCS})
++add_library(plasmaextracomponentsplugin ${plasmaextracomponents_SRCS})
  
  target_link_libraries(plasmaextracomponentsplugin
          Qt5::Quick
@@ -1705,7 +1705,7 @@ index 34e7f7ba5..7bfe3a1bb 100644
      )
  
 -add_library(platformcomponentsplugin SHARED ${platformcomponents_SRCS})
-+add_library(platformcomponentsplugin STATIC ${platformcomponents_SRCS})
++add_library(platformcomponentsplugin ${platformcomponents_SRCS})
  
  target_link_libraries(
      platformcomponentsplugin
@@ -1751,7 +1751,7 @@ index d0f1e3c51..b43e9b084 100644
  ecm_qt_declare_logging_category(PlasmaQuick_LIB_SRCS HEADER debug_p.h IDENTIFIER LOG_PLASMAQUICK CATEGORY_NAME org.kde.plasmaquick)
  
 -add_library(KF5PlasmaQuick SHARED ${plasmaquick_LIB_SRC})
-+add_library(KF5PlasmaQuick STATIC ${plasmaquick_LIB_SRC})
++add_library(KF5PlasmaQuick ${plasmaquick_LIB_SRC})
  add_library(KF5::PlasmaQuick ALIAS KF5PlasmaQuick)
  target_include_directories(KF5PlasmaQuick PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_BINARY_DIR}/..>")
  
@@ -1790,7 +1790,7 @@ index 46cdf13ab..6656fae02 100644
  )
  
 -add_library(%{APPNAMELC}plugin SHARED ${%{APPNAMELC}plugin_SRCS})
-+add_library(%{APPNAMELC}plugin STATIC ${%{APPNAMELC}plugin_SRCS})
++add_library(%{APPNAMELC}plugin ${%{APPNAMELC}plugin_SRCS})
  
  target_link_libraries(%{APPNAMELC}plugin
      KF5::I18n
@@ -2076,7 +2076,7 @@ index d0a4a7b..8e2a701 100644
      )
  
 -add_library(solidextensionplugin SHARED ${solidextensionplugin_SRCS})
-+add_library(solidextensionplugin STATIC ${solidextensionplugin_SRCS})
++add_library(solidextensionplugin ${solidextensionplugin_SRCS})
  
  target_link_libraries(
      solidextensionplugin
@@ -2249,7 +2249,7 @@ index d0c4927..0b3aa2f 100644
  
  add_library (
 -   KF5ActivitiesStats SHARED
-+   KF5ActivitiesStats STATIC
++   KF5ActivitiesStats
     ${KActivitiesStats_LIB_SRCS}
     )
  add_library(KF5::ActivitiesStats ALIAS KF5ActivitiesStats)
@@ -2266,68 +2266,21 @@ index 7c5476e..150690f 100644
          ADD_LIBRARY(${_logical_name} MODULE ${_sip_output_files} )
      ELSE (CYGWIN)
 -        ADD_LIBRARY(${_logical_name} SHARED ${_sip_output_files} )
-+        ADD_LIBRARY(${_logical_name} STATIC ${_sip_output_files} )
++        ADD_LIBRARY(${_logical_name} ${_sip_output_files} )
      ENDIF (CYGWIN)
      TARGET_LINK_LIBRARIES(${_logical_name} ${PYTHON_LIBRARY})
      TARGET_LINK_LIBRARIES(${_logical_name} ${EXTRA_LINK_LIBRARIES})
 diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.cmake
-index 3f7f5a8..ce1051f 100644
+index 3f7f5a8..0650c81 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
-@@ -174,6 +174,57 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
+@@ -174,6 +174,10 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
  
  endif()
  
 +# Can't do this at call time because CMake resets it :(
 +set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ".so")
 +set(CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES} ${KDE_STANDARD_LIBRARIES} $ENV{KDE_STANDARD_LIBRARIES})
-+message("CMAKE_C_IMPLICIT_LINK_LIBRARIES ${CMAKE_C_IMPLICIT_LINK_LIBRARIES}")
-+#link_directories("/home/kdedev/systemd-237/build/src/udev")
-+
-+# macro (find_package _name)
-+#     message("find_package called with ${ARGV}")
-+#     message("   CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES}")
-+#     _find_package(${ARGV})
-+# endmacro()
-+
-+# macro (add_library _name)
-+# #     message("add_library called with ${ARGV}")
-+#     # Hack UNKNOWN to STATIC
-+#     set(arg "${ARGV}")
-+#     list(FIND arg "UNKNOWN" find_idx)
-+#     if(find_idx GREATER -1)
-+#         list(INSERT arg ${find_idx} "STATIC")
-+#         MATH(EXPR find_idx "${find_idx} + 1")
-+#         list (REMOVE_AT arg ${find_idx})
-+# #         message("  arguments modified to ${arg}")
-+#     endif()
-+#     _add_library(${arg})
-+#     if (";${ARGV};" MATCHES ";IMPORTED;")
-+#         get_target_property(libs ${_name} INTERFACE_LINK_LIBRARIES)
-+#         if ("${libs}" STREQUAL "libs-NOTFOUND")
-+#             set_target_properties(${_name} PROPERTIES INTERFACE_LINK_LIBRARIES "${CMAKE_STATIC_LIBRARIES}")
-+#         else()
-+#             set_target_properties(${_name} PROPERTIES INTERFACE_LINK_LIBRARIES "${libs};${CMAKE_STATIC_LIBRARIES}")
-+#         endif()
-+#     endif()
-+# endmacro()
-+# 
-+# macro (target_link_libraries _name)
-+# #     message("target_link_libraries called with ${ARGV}")
-+#     _target_link_libraries(${ARGV})
-+#     foreach(arg ${ARGV})
-+# #    message("    arg ${arg}")
-+#         if (TARGET ${arg})
-+#             get_target_property(libs ${arg} INTERFACE_LINK_LIBRARIES)
-+# #             message("    INTERFACE_LINK_LIBRARIES ${libs}")
-+#             if ("${libs}" STREQUAL "libs-NOTFOUND")
-+#                 set_target_properties(${arg} PROPERTIES INTERFACE_LINK_LIBRARIES "${CMAKE_STATIC_LIBRARIES}")
-+#             elseif (NOT ";${libs};" MATCHES "${CMAKE_STATIC_LIBRARIES}")
-+#                 set_target_properties(${arg} PROPERTIES INTERFACE_LINK_LIBRARIES "${libs};${CMAKE_STATIC_LIBRARIES}")
-+#             endif()
-+#         endif()
-+#     endforeach(arg)
-+# endmacro()
 +
  ################ Testing setup ####################################
  
@@ -2354,7 +2307,7 @@ index 151db9f..3909f71 100644
  set(CMAKE_CXX_STANDARD 14)
  
 -add_library(ExternalLib SHARED external_lib.cpp)
-+add_library(ExternalLib STATIC external_lib.cpp)
++add_library(ExternalLib external_lib.cpp)
  target_link_libraries(ExternalLib PUBLIC Qt5::Core)
  target_compile_features(ExternalLib PUBLIC cxx_nullptr)
  
@@ -2821,7 +2774,7 @@ index 97984967..c4c2cd0d 100644
      )
  
 -add_library(balooplugin SHARED ${balooplugin_SRCS})
-+add_library(balooplugin STATIC ${balooplugin_SRCS})
++add_library(balooplugin ${balooplugin_SRCS})
  target_link_libraries(balooplugin Qt5::Core Qt5::Qml KF5::Baloo)
  install(TARGETS balooplugin DESTINATION ${QML_INSTALL_DIR}/org/kde/baloo/)
  
@@ -2834,7 +2787,7 @@ index 936d0c9b..2d1fb09c 100644
  )
  
 -add_library(baloomonitorplugin SHARED ${baloomonitorplugin_SRCS})
-+add_library(baloomonitorplugin STATIC ${baloomonitorplugin_SRCS})
++add_library(baloomonitorplugin ${baloomonitorplugin_SRCS})
  add_dependencies(baloomonitorplugin BalooDBusInterfaces)
  
  target_link_libraries(baloomonitorplugin
@@ -2874,6 +2827,18 @@ EOF
 echo ./source/frameworks/bluez-qt
 git -C ./source/frameworks/bluez-qt checkout .
 patch -p1 -d ./source/frameworks/bluez-qt <<'EOF'
+diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
+index 888978f..1b6e17c 100644
+--- a/autotests/CMakeLists.txt
++++ b/autotests/CMakeLists.txt
+@@ -36,6 +36,6 @@ bluezqt_tests(
+ 
+ if(Qt5Qml_FOUND AND Qt5QuickTest_FOUND)
+     bluezqt_tests(qmltests)
+-    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest)
++    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest -lQt5Quick -lQt5QmlDebug -lQt5Qml)
+     add_definitions(-DBLUEZQT_QML_IMPORT_PATH="${CMAKE_CURRENT_BINARY_DIR}/../src/imports")
+ endif()
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
 index 59668a5..7afaca5 100644
 --- a/src/imports/CMakeLists.txt
@@ -2883,7 +2848,7 @@ index 59668a5..7afaca5 100644
  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY org/kde/bluezqt)
  
 -add_library(bluezqtextensionplugin SHARED ${bluezqtextensionplugin_SRCS})
-+add_library(bluezqtextensionplugin STATIC ${bluezqtextensionplugin_SRCS})
++add_library(bluezqtextensionplugin ${bluezqtextensionplugin_SRCS})
  
  target_link_libraries(bluezqtextensionplugin
      Qt5::Core
@@ -3092,7 +3057,7 @@ index 90bbaea..3c02dc0 100644
  endif()
  
 -add_library(qqc2desktopstyleplugin SHARED ${qqc2desktopstyle_SRCS})
-+add_library(qqc2desktopstyleplugin STATIC ${qqc2desktopstyle_SRCS})
++add_library(qqc2desktopstyleplugin ${qqc2desktopstyle_SRCS})
  target_link_libraries(qqc2desktopstyleplugin Qt5::Core Qt5::Qml Qt5::Quick Qt5::Gui Qt5::Widgets KF5::Kirigami2)
  
  if(KF5ConfigWidgets_FOUND)
@@ -3123,7 +3088,7 @@ index 03cdbb5..3967238 100644
 +++ b/src/quick/CMakeLists.txt
 @@ -1,4 +1,4 @@
 -add_library(prisonquickplugin SHARED
-+add_library(prisonquickplugin STATIC
++add_library(prisonquickplugin
      barcodequickitem.cpp
      prisonquickplugin.cpp
  )
@@ -3464,7 +3429,7 @@ index e8127e4..bc49713 100644
  )
  
 -add_library(draganddropplugin SHARED ${declarativedragdrop_SRCS})
-+add_library(draganddropplugin STATIC ${declarativedragdrop_SRCS})
++add_library(draganddropplugin ${declarativedragdrop_SRCS})
  target_link_libraries(draganddropplugin
          Qt5::Core
          Qt5::Quick
@@ -3477,7 +3442,7 @@ index 895b4c6..91ddd03 100644
  )
  
 -add_library(kcmcontrolsplugin SHARED ${declarativedragdrop_SRCS})
-+add_library(kcmcontrolsplugin STATIC ${declarativedragdrop_SRCS})
++add_library(kcmcontrolsplugin ${declarativedragdrop_SRCS})
  target_link_libraries(kcmcontrolsplugin
          Qt5::Core
          Qt5::Quick
@@ -3490,7 +3455,7 @@ index 59a68b2..7897d56 100644
      )
  
 -add_library(kconfigplugin SHARED ${kconfigplugin_SRCS})
-+add_library(kconfigplugin STATIC ${kconfigplugin_SRCS})
++add_library(kconfigplugin ${kconfigplugin_SRCS})
  target_link_libraries(kconfigplugin
          Qt5::Core
          Qt5::Qml
@@ -3503,7 +3468,7 @@ index 3f77f2d..001b90e 100644
      )
  
 -add_library(kcoreaddonsplugin SHARED ${kcoreaddonsplugin_SRCS})
-+add_library(kcoreaddonsplugin STATIC ${kcoreaddonsplugin_SRCS})
++add_library(kcoreaddonsplugin ${kcoreaddonsplugin_SRCS})
  target_link_libraries(kcoreaddonsplugin
          Qt5::Core
          Qt5::Quick
@@ -3516,7 +3481,7 @@ index 7b258e0..374ac1d 100644
      )
  
 -add_library(kio SHARED ${kioplugin_SRCS})
-+add_library(kio STATIC ${kioplugin_SRCS})
++add_library(kio ${kioplugin_SRCS})
  target_link_libraries(kio
          Qt5::Core
          Qt5::Qml
@@ -3529,7 +3494,7 @@ index da355c1..48a8455 100644
  )
  
 -add_library(kquickcontrolsprivateplugin SHARED ${kquickcontrolsprivate_SRCS})
-+add_library(kquickcontrolsprivateplugin STATIC ${kquickcontrolsprivate_SRCS})
++add_library(kquickcontrolsprivateplugin ${kquickcontrolsprivate_SRCS})
  
  target_link_libraries(kquickcontrolsprivateplugin
          Qt5::Core
@@ -3542,7 +3507,7 @@ index f12474d..ed17a7d 100644
  endif()
  
 -add_library(kquickcontrolsaddonsplugin SHARED ${kquickcontrolsaddons_SRCS})
-+add_library(kquickcontrolsaddonsplugin STATIC ${kquickcontrolsaddons_SRCS})
++add_library(kquickcontrolsaddonsplugin ${kquickcontrolsaddons_SRCS})
  
  target_link_libraries(kquickcontrolsaddonsplugin
          Qt5::Core
@@ -3555,7 +3520,7 @@ index ce0ea74..9b55d9d 100644
      )
  
 -add_library(kwindowsystem SHARED ${kwindowsystemplugin_SRCS})
-+add_library(kwindowsystem STATIC ${kwindowsystemplugin_SRCS})
++add_library(kwindowsystem ${kwindowsystemplugin_SRCS})
  target_link_libraries(kwindowsystem
          Qt5::Core
          Qt5::Qml
@@ -3606,7 +3571,7 @@ index 6558616..919620e 100644
 +++ b/src/declarative/CMakeLists.txt
 @@ -1,4 +1,4 @@
 -add_library(KF5PeopleDeclarative SHARED
-+add_library(KF5PeopleDeclarative STATIC
++add_library(KF5PeopleDeclarative
                      declarativepersondata.cpp
                      personactionsmodel.cpp
                      peopleqmlplugin.cpp)
@@ -3631,7 +3596,7 @@ index 66b1a5a..90e4117 100644
  qt5_wrap_ui (kpeople_widgets_SRCS person-details-presentation.ui)
  
 -add_library (KF5PeopleWidgets SHARED ${kpeople_widgets_SRCS} )
-+add_library (KF5PeopleWidgets STATIC ${kpeople_widgets_SRCS} )
++add_library (KF5PeopleWidgets ${kpeople_widgets_SRCS} )
  add_library (KF5::PeopleWidgets ALIAS KF5PeopleWidgets)
  
  target_link_libraries (KF5PeopleWidgets
