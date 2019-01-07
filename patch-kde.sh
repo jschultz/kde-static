@@ -3575,3 +3575,17 @@ index e189aff..f356854 100644
  #
  # install(TARGETS phonedetailswidgetplugin DESTINATION ${PLUGIN_INSTALL_DIR})
 EOF
+echo ./source/frameworks/kholidays
+git -C ./source/frameworks/kholidays checkout .
+patch -p1 -d ./source/frameworks/kholidays <<'EOF'
+diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
+index 825bbb9..e72c2b1 100644
+--- a/src/declarative/CMakeLists.txt
++++ b/src/declarative/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_library(kholidaysdeclarativeplugin SHARED kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
++add_library(kholidaysdeclarativeplugin STATIC kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
+ 
+ target_link_libraries(kholidaysdeclarativeplugin
+   Qt5::Qml
+EOF
