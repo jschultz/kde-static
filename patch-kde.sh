@@ -122,7 +122,7 @@ echo ./source/kde/kdegraphics/kdegraphics-mobipocket
 git -C ./source/kde/kdegraphics/kdegraphics-mobipocket checkout .
 patch -p1 -d ./source/kde/kdegraphics/kdegraphics-mobipocket <<'EOF'
 diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
-index bfa258b..34c3cb7 100644
+index bfa258b..101a335 100644
 --- a/lib/CMakeLists.txt
 +++ b/lib/CMakeLists.txt
 @@ -5,7 +5,7 @@ set (QMOBIPOCKET_SRCS
@@ -152,30 +152,35 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 95490cbbc..5b8ef86aa 100644
+index 9584e4994..6691d55b6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -32,7 +32,7 @@ ecm_setup_version(${PROJECT_VERSION}
-                   VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/core/version.h"
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
+ # KDE Application Version, managed by release script
+ set (KDE_APPLICATIONS_VERSION_MAJOR "18")
+ set (KDE_APPLICATIONS_VERSION_MINOR "12")
+-set (KDE_APPLICATIONS_VERSION_MICRO "1")
++set (KDE_APPLICATIONS_VERSION_MICRO "0")
+ set (KDE_APPLICATIONS_VERSION "${KDE_APPLICATIONS_VERSION_MAJOR}.${KDE_APPLICATIONS_VERSION_MINOR}.${KDE_APPLICATIONS_VERSION_MICRO}")
+ 
+ project(okular VERSION 1.6.${KDE_APPLICATIONS_VERSION_MICRO})
+@@ -33,6 +33,7 @@ ecm_setup_version(${PROJECT_VERSION}
                    PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Okular5ConfigVersion.cmake")
  
--find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Core DBus Test Widgets PrintSupport Svg Qml Quick)
-+find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Core DBus Test Widgets PrintSupport Svg Qml Quick Concurrent X11Extras)
+ find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Core DBus Test Widgets PrintSupport Svg Qml Quick)
++find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Concurrent X11Extras)
  find_package(Qt5 ${QT_REQUIRED_VERSION} OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
      message(STATUS "Qt5TextToSpeech not found, speech features will be disabled")
-@@ -70,6 +70,10 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
-     DocTools
+@@ -71,6 +72,7 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
      JS
      Wallet
-+    DBusAddons
-+    GuiAddons
-+    Attica
-+    GlobalAccel
  )
++find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS DBusAddons GuiAddons Attica GlobalAccel)
  
  if(KF5Wallet_FOUND)
-@@ -96,7 +100,7 @@ set_package_properties(KF5Kirigami2 PROPERTIES
+     add_definitions(-DWITH_KWALLET=1)
+@@ -96,7 +98,7 @@ set_package_properties(KF5Kirigami2 PROPERTIES
      TYPE RUNTIME
  )
  find_package(Phonon4Qt5 CONFIG REQUIRED)
@@ -184,31 +189,58 @@ index 95490cbbc..5b8ef86aa 100644
  set_package_properties(KDEExperimentalPurpose PROPERTIES
      DESCRIPTION "A framework for services and actions integration"
      PURPOSE "Required for enabling the share menu in Okular"
-@@ -142,8 +146,8 @@ if(BUILD_COVERAGE)
+@@ -142,8 +144,8 @@ if(BUILD_COVERAGE)
  endif()
  
  add_subdirectory( ui )
--add_subdirectory( shell )
- add_subdirectory( generators )
-+add_subdirectory( shell )
++add_subdirectory( generators )	# Static build needs generators to be processed before shell
+ add_subdirectory( shell )
+-add_subdirectory( generators )
  if(BUILD_TESTING)
     add_subdirectory( autotests )
     add_subdirectory( conf/autotests )
-@@ -247,7 +251,7 @@ ki18n_wrap_ui(okularcore_SRCS
+@@ -247,7 +249,9 @@ ki18n_wrap_ui(okularcore_SRCS
  
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
 -add_library(okularcore SHARED ${okularcore_SRCS})
-+add_library(okularcore ${okularcore_SRCS})
++file (READ "${CMAKE_BINARY_DIR}/generators_static_list.txt" generators_static)
++
++add_library(okularcore STATIC ${okularcore_SRCS})
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
-@@ -400,7 +404,7 @@ ki18n_wrap_ui(okularpart_SRCS
+@@ -282,6 +286,7 @@ PRIVATE
+     Phonon::phonon4qt5
+     ${MATH_LIB}
+     ${ZLIB_LIBRARIES}
++    ${generators_static}
+ PUBLIC  # these are included from the installed headers
+     KF5::CoreAddons
+     KF5::XmlGui
+@@ -290,6 +295,7 @@ PUBLIC  # these are included from the installed headers
+     Qt5::Widgets
+ )
+ 
++target_link_libraries(okularcore PUBLIC ${generators_static})
+ 
+ if (KF5Wallet_FOUND)
+     target_link_libraries(okularcore PRIVATE KF5::Wallet)
+@@ -313,7 +319,7 @@ endif()
+ 
+ set_target_properties(okularcore PROPERTIES VERSION 9.0.0 SOVERSION 9 OUTPUT_NAME Okular5Core EXPORT_NAME Core)
+ 
+-install(TARGETS okularcore EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
++install(TARGETS okularcore ${generators_static} EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+ 
+ install(FILES conf/okular.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
+ install(FILES conf/okular_core.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
+@@ -400,7 +406,7 @@ ki18n_wrap_ui(okularpart_SRCS
  
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
 -add_library(okularpart SHARED ${okularpart_SRCS})
-+add_library(okularpart ${okularpart_SRCS})
++add_library(okularpart STATIC ${okularpart_SRCS})
  generate_export_header(okularpart BASE_NAME okularpart)
  
  target_link_libraries(okularpart okularcore
@@ -296,7 +328,7 @@ index 37cad1f1d..bb7365c43 100644
          /**
           * Opens the document.
 diff --git a/generators/CMakeLists.txt b/generators/CMakeLists.txt
-index 6feec81b3..260c6abd9 100644
+index 6feec81b3..0613e05aa 100644
 --- a/generators/CMakeLists.txt
 +++ b/generators/CMakeLists.txt
 @@ -5,6 +5,21 @@ function(okular_add_generator _target)
@@ -321,101 +353,15 @@ index 6feec81b3..260c6abd9 100644
  endfunction()
  
  set(LIBSPECTRE_MINIMUM_VERSION "0.2")
-@@ -103,53 +118,53 @@ set_package_properties("discount" PROPERTIES
- if(Poppler_Qt5_FOUND)
-   add_subdirectory(poppler)
- endif(Poppler_Qt5_FOUND)
--
--if(LIBSPECTRE_FOUND)
--  add_subdirectory(spectre)
--endif(LIBSPECTRE_FOUND)
--
-+# 
-+# if(LIBSPECTRE_FOUND)
-+#   add_subdirectory(spectre)
-+# endif(LIBSPECTRE_FOUND)
-+# 
- if(KF5KExiv2_FOUND)
-   add_subdirectory( kimgio )
- endif()
--
--if(CHM_FOUND AND KF5KHtml_FOUND AND LIBZIP_FOUND)
--  add_subdirectory( chm )
--endif()
--
--if(DJVULIBRE_FOUND)
--  add_subdirectory(djvu)
--endif(DJVULIBRE_FOUND)
--
--add_subdirectory(dvi)
--
-+# 
-+# if(CHM_FOUND AND KF5KHtml_FOUND AND LIBZIP_FOUND)
-+#   add_subdirectory( chm )
-+# endif()
-+# 
-+# if(DJVULIBRE_FOUND)
-+#   add_subdirectory(djvu)
-+# endif(DJVULIBRE_FOUND)
-+# 
-+# add_subdirectory(dvi)
-+# 
- if(TIFF_FOUND)
-   add_subdirectory(tiff)
- endif(TIFF_FOUND)
--
--add_subdirectory(xps)
--
--add_subdirectory(ooo)
--
--add_subdirectory(fictionbook)
--
+@@ -132,7 +147,7 @@ add_subdirectory(ooo)
+ 
+ add_subdirectory(fictionbook)
+ 
 -add_subdirectory(comicbook)
--
--add_subdirectory(fax)
--
--if(JPEG_FOUND AND ZLIB_FOUND)
--  add_subdirectory(plucker)
--endif(JPEG_FOUND AND ZLIB_FOUND)
--
--if(EPUB_FOUND)
--  add_subdirectory(epub)
--endif(EPUB_FOUND)
-+# 
-+# add_subdirectory(xps)
-+# 
-+# add_subdirectory(ooo)
-+# 
-+# add_subdirectory(fictionbook)
-+# 
 +# add_subdirectory(comicbook)
-+# 
-+# add_subdirectory(fax)
-+# 
-+# if(JPEG_FOUND AND ZLIB_FOUND)
-+#   add_subdirectory(plucker)
-+# endif(JPEG_FOUND AND ZLIB_FOUND)
-+# 
-+# if(EPUB_FOUND)
-+#   add_subdirectory(epub)
-+# endif(EPUB_FOUND)
  
- add_subdirectory(txt)
+ add_subdirectory(fax)
  
--if(QMobipocket_FOUND)
--  add_subdirectory(mobipocket)
--endif()
--
--if(discount_FOUND)
--  add_subdirectory(markdown)
--endif()
-+# if(QMobipocket_FOUND)
-+#   add_subdirectory(mobipocket)
-+# endif()
-+# 
-+# if(discount_FOUND)
-+#   add_subdirectory(markdown)
-+# endif()
 diff --git a/generators/chm/kio-msits/CMakeLists.txt b/generators/chm/kio-msits/CMakeLists.txt
 index 36e670628..d8061b32b 100644
 --- a/generators/chm/kio-msits/CMakeLists.txt
@@ -456,7 +402,7 @@ index 4439a1144..46c41a71e 100644
  
  #include <qbitarray.h>
 diff --git a/mobile/components/CMakeLists.txt b/mobile/components/CMakeLists.txt
-index f2529f78a..07acffc13 100644
+index f2529f78a..bd52e3770 100644
 --- a/mobile/components/CMakeLists.txt
 +++ b/mobile/components/CMakeLists.txt
 @@ -22,7 +22,7 @@ set(okular_SRCS
@@ -482,10 +428,10 @@ index 2866d3737..0c940cf96 100644
          m_dirtyHandler->start( 750 );
      }
 diff --git a/shell/CMakeLists.txt b/shell/CMakeLists.txt
-index 628f74be1..30970dff6 100644
+index 628f74be1..e99b484c7 100644
 --- a/shell/CMakeLists.txt
 +++ b/shell/CMakeLists.txt
-@@ -18,12 +18,14 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
+@@ -18,12 +18,13 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
  
  add_executable(okular ${okular_SRCS})
  
@@ -496,8 +442,7 @@ index 628f74be1..30970dff6 100644
  
  	target_link_libraries(okular KF5::Activities)
  endif()
-+file (READ "${CMAKE_BINARY_DIR}/generators_static_list.txt" generators_static)
-+target_link_libraries(okular okularcore ${generators_static})
++target_link_libraries(okular okularcore)
  
  install(TARGETS okular ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
  
@@ -624,7 +569,7 @@ index f5f5ad4..bf2685e 100644
  target_link_libraries(kaccounts_kio_webdav_plugin
      Qt5::Core
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
-index ab35afe..b966c60 100644
+index ab35afe..900c960 100644
 --- a/src/declarative/CMakeLists.txt
 +++ b/src/declarative/CMakeLists.txt
 @@ -1,6 +1,6 @@
@@ -636,7 +581,7 @@ index ab35afe..b966c60 100644
                              ../uipluginsmanager.cpp)
  
 diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
-index 01d0671..8d8ebd2 100644
+index 01d0671..4c92a23 100644
 --- a/src/lib/CMakeLists.txt
 +++ b/src/lib/CMakeLists.txt
 @@ -35,7 +35,7 @@ ecm_generate_headers(kaccountslib_HEADERS
@@ -858,7 +803,7 @@ index 742ea5c..a42d8ee 100644
  set(KRunner_AUTOMOC_MACRO_NAMES "K_EXPORT_PLASMA_RUNNER" "K_EXPORT_RUNNER_CONFIG")
  if(NOT CMAKE_VERSION VERSION_LESS "3.10.0")
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
-index 83837b0..fadb935 100644
+index 83837b0..0f0a792 100644
 --- a/src/declarative/CMakeLists.txt
 +++ b/src/declarative/CMakeLists.txt
 @@ -6,7 +6,7 @@ set(runnermodel_SRCS
@@ -888,7 +833,7 @@ echo ./source/frameworks/kitemmodels
 git -C ./source/frameworks/kitemmodels checkout .
 patch -p1 -d ./source/frameworks/kitemmodels <<'EOF'
 diff --git a/autotests/proxymodeltestsuite/CMakeLists.txt b/autotests/proxymodeltestsuite/CMakeLists.txt
-index cbb89aa..57f9b40 100644
+index cbb89aa..820b2dc 100644
 --- a/autotests/proxymodeltestsuite/CMakeLists.txt
 +++ b/autotests/proxymodeltestsuite/CMakeLists.txt
 @@ -47,7 +47,7 @@ if (Grantlee_FOUND)
@@ -1532,7 +1477,7 @@ echo ./source/frameworks/kjs
 git -C ./source/frameworks/kjs checkout .
 patch -p1 -d ./source/frameworks/kjs <<'EOF'
 diff --git a/src/wtf/CMakeLists.txt b/src/wtf/CMakeLists.txt
-index c05f7a4..2880710 100644
+index c05f7a4..f1ec9c8 100644
 --- a/src/wtf/CMakeLists.txt
 +++ b/src/wtf/CMakeLists.txt
 @@ -4,7 +4,7 @@
@@ -1645,7 +1590,7 @@ index 62d649714..31135b872 100644
  
  install(TARGETS plasma_containmentactions_test DESTINATION ${KDE_INSTALL_PLUGINDIR})
 diff --git a/src/declarativeimports/calendar/CMakeLists.txt b/src/declarativeimports/calendar/CMakeLists.txt
-index 9316419cb..d03e0cef1 100644
+index 9316419cb..68d9104c0 100644
 --- a/src/declarativeimports/calendar/CMakeLists.txt
 +++ b/src/declarativeimports/calendar/CMakeLists.txt
 @@ -11,7 +11,7 @@ set(calendar_SRCS
@@ -1658,7 +1603,7 @@ index 9316419cb..d03e0cef1 100644
  target_link_libraries(calendarplugin
      Qt5::Core
 diff --git a/src/declarativeimports/core/CMakeLists.txt b/src/declarativeimports/core/CMakeLists.txt
-index 26b5829f6..de1c4de22 100644
+index 26b5829f6..e7a3233c9 100644
 --- a/src/declarativeimports/core/CMakeLists.txt
 +++ b/src/declarativeimports/core/CMakeLists.txt
 @@ -26,7 +26,7 @@ set(corebindings_SRCS
@@ -1671,7 +1616,7 @@ index 26b5829f6..de1c4de22 100644
          Qt5::Quick
          Qt5::Qml
 diff --git a/src/declarativeimports/plasmacomponents/CMakeLists.txt b/src/declarativeimports/plasmacomponents/CMakeLists.txt
-index 59ee81309..a6d30f7e3 100644
+index 59ee81309..c7a6a9be7 100644
 --- a/src/declarativeimports/plasmacomponents/CMakeLists.txt
 +++ b/src/declarativeimports/plasmacomponents/CMakeLists.txt
 @@ -10,7 +10,7 @@ set(plasmacomponents_SRCS
@@ -1684,7 +1629,7 @@ index 59ee81309..a6d30f7e3 100644
          Qt5::Core
          Qt5::Quick
 diff --git a/src/declarativeimports/plasmaextracomponents/CMakeLists.txt b/src/declarativeimports/plasmaextracomponents/CMakeLists.txt
-index 5b1400020..5c4b128da 100644
+index 5b1400020..7df12a646 100644
 --- a/src/declarativeimports/plasmaextracomponents/CMakeLists.txt
 +++ b/src/declarativeimports/plasmaextracomponents/CMakeLists.txt
 @@ -11,7 +11,7 @@ set(plasmaextracomponents_SRCS
@@ -1697,7 +1642,7 @@ index 5b1400020..5c4b128da 100644
  target_link_libraries(plasmaextracomponentsplugin
          Qt5::Quick
 diff --git a/src/declarativeimports/platformcomponents/CMakeLists.txt b/src/declarativeimports/platformcomponents/CMakeLists.txt
-index 34e7f7ba5..7bfe3a1bb 100644
+index 34e7f7ba5..4f925949b 100644
 --- a/src/declarativeimports/platformcomponents/CMakeLists.txt
 +++ b/src/declarativeimports/platformcomponents/CMakeLists.txt
 @@ -7,7 +7,7 @@ set(platformcomponents_SRCS
@@ -1743,7 +1688,7 @@ index 08c233a9c..dcb4914af 100644
      //don't use QRect corner methods here, they have semantics that might come as unexpected.
      //prefer constructing the points explicitly. e.g. from QRect::topRight docs:
 diff --git a/src/plasmaquick/CMakeLists.txt b/src/plasmaquick/CMakeLists.txt
-index d0f1e3c51..b43e9b084 100644
+index d0f1e3c51..07bd4c9de 100644
 --- a/src/plasmaquick/CMakeLists.txt
 +++ b/src/plasmaquick/CMakeLists.txt
 @@ -23,7 +23,7 @@ set(plasmaquick_LIB_SRC
@@ -1782,7 +1727,7 @@ index 548e77732..c47d8a40b 100644
  kcoreaddons_desktop_to_json(plasma_applet_%{APPNAMELC} package/metadata.desktop SERVICE_TYPES plasma-applet.desktop)
  
 diff --git a/templates/qml-plasmoid-with-qml-extension/plugin/CMakeLists.txt b/templates/qml-plasmoid-with-qml-extension/plugin/CMakeLists.txt
-index 46cdf13ab..6656fae02 100644
+index 46cdf13ab..17342e7dc 100644
 --- a/templates/qml-plasmoid-with-qml-extension/plugin/CMakeLists.txt
 +++ b/templates/qml-plasmoid-with-qml-extension/plugin/CMakeLists.txt
 @@ -4,7 +4,7 @@ set(%{APPNAMELC}plugin_SRCS
@@ -2068,7 +2013,7 @@ echo ./source/frameworks/solid
 git -C ./source/frameworks/solid checkout .
 patch -p1 -d ./source/frameworks/solid <<'EOF'
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
-index d0a4a7b..8e2a701 100644
+index d0a4a7b..1d4c3b0 100644
 --- a/src/imports/CMakeLists.txt
 +++ b/src/imports/CMakeLists.txt
 @@ -18,7 +18,7 @@ set(solidextensionplugin_SRCS
@@ -2241,7 +2186,7 @@ echo ./source/frameworks/kactivities-stats
 git -C ./source/frameworks/kactivities-stats checkout .
 patch -p1 -d ./source/frameworks/kactivities-stats <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index d0c4927..0b3aa2f 100644
+index d0c4927..42c010a 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -33,7 +33,7 @@ qt5_add_dbus_interface (
@@ -2258,7 +2203,7 @@ echo ./source/frameworks/extra-cmake-modules
 git -C ./source/frameworks/extra-cmake-modules checkout .
 patch -p1 -d ./source/frameworks/extra-cmake-modules <<'EOF'
 diff --git a/attic/modules/SIPMacros.cmake b/attic/modules/SIPMacros.cmake
-index 7c5476e..150690f 100644
+index 7c5476e..09e0928 100644
 --- a/attic/modules/SIPMacros.cmake
 +++ b/attic/modules/SIPMacros.cmake
 @@ -113,7 +113,7 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
@@ -2299,7 +2244,7 @@ index 2cd76f8..6b29f84 100644
  
  
 diff --git a/tests/GenerateSipBindings/CMakeLists.txt b/tests/GenerateSipBindings/CMakeLists.txt
-index 151db9f..3909f71 100644
+index 151db9f..ab3b963 100644
 --- a/tests/GenerateSipBindings/CMakeLists.txt
 +++ b/tests/GenerateSipBindings/CMakeLists.txt
 @@ -10,7 +10,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
@@ -2766,7 +2711,7 @@ index bc3e8ca2..8336d021 100644
  target_link_libraries(timeline
    KF5::KIOWidgets
 diff --git a/src/qml/CMakeLists.txt b/src/qml/CMakeLists.txt
-index 97984967..c4c2cd0d 100644
+index 97984967..b841d183 100644
 --- a/src/qml/CMakeLists.txt
 +++ b/src/qml/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(balooplugin_SRCS
@@ -2779,7 +2724,7 @@ index 97984967..c4c2cd0d 100644
  install(TARGETS balooplugin DESTINATION ${QML_INSTALL_DIR}/org/kde/baloo/)
  
 diff --git a/src/qml/experimental/CMakeLists.txt b/src/qml/experimental/CMakeLists.txt
-index 936d0c9b..2d1fb09c 100644
+index 936d0c9b..9fce64a8 100644
 --- a/src/qml/experimental/CMakeLists.txt
 +++ b/src/qml/experimental/CMakeLists.txt
 @@ -15,7 +15,7 @@ set(baloomonitorplugin_SRCS
@@ -2840,7 +2785,7 @@ index 888978f..1b6e17c 100644
      add_definitions(-DBLUEZQT_QML_IMPORT_PATH="${CMAKE_CURRENT_BINARY_DIR}/../src/imports")
  endif()
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
-index 59668a5..7afaca5 100644
+index 59668a5..38d3e59 100644
 --- a/src/imports/CMakeLists.txt
 +++ b/src/imports/CMakeLists.txt
 @@ -12,7 +12,7 @@ set(bluezqtextensionplugin_SRCS
@@ -3049,7 +2994,7 @@ index b977752..d709ed5 100644
  target_link_libraries(org.kde.desktop
      PUBLIC
 diff --git a/plugin/CMakeLists.txt b/plugin/CMakeLists.txt
-index 90bbaea..3c02dc0 100644
+index 90bbaea..20cbf16 100644
 --- a/plugin/CMakeLists.txt
 +++ b/plugin/CMakeLists.txt
 @@ -14,7 +14,7 @@ set(qqc2desktopstyle_SRCS
@@ -3083,7 +3028,7 @@ echo ./source/frameworks/prison
 git -C ./source/frameworks/prison checkout .
 patch -p1 -d ./source/frameworks/prison <<'EOF'
 diff --git a/src/quick/CMakeLists.txt b/src/quick/CMakeLists.txt
-index 03cdbb5..3967238 100644
+index 03cdbb5..b877293 100644
 --- a/src/quick/CMakeLists.txt
 +++ b/src/quick/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -3421,7 +3366,7 @@ index a4ce72a..41e48ff 100644
  add_library(KF5::CalendarEvents ALIAS KF5CalendarEvents)
  
 diff --git a/src/qmlcontrols/draganddrop/CMakeLists.txt b/src/qmlcontrols/draganddrop/CMakeLists.txt
-index e8127e4..bc49713 100644
+index e8127e4..e649c4f 100644
 --- a/src/qmlcontrols/draganddrop/CMakeLists.txt
 +++ b/src/qmlcontrols/draganddrop/CMakeLists.txt
 @@ -9,7 +9,7 @@ set(declarativedragdrop_SRCS
@@ -3434,7 +3379,7 @@ index e8127e4..bc49713 100644
          Qt5::Core
          Qt5::Quick
 diff --git a/src/qmlcontrols/kcmcontrols/CMakeLists.txt b/src/qmlcontrols/kcmcontrols/CMakeLists.txt
-index 895b4c6..91ddd03 100644
+index 895b4c6..b40601e 100644
 --- a/src/qmlcontrols/kcmcontrols/CMakeLists.txt
 +++ b/src/qmlcontrols/kcmcontrols/CMakeLists.txt
 @@ -4,7 +4,7 @@ set(declarativedragdrop_SRCS
@@ -3447,7 +3392,7 @@ index 895b4c6..91ddd03 100644
          Qt5::Core
          Qt5::Quick
 diff --git a/src/qmlcontrols/kconfig/CMakeLists.txt b/src/qmlcontrols/kconfig/CMakeLists.txt
-index 59a68b2..7897d56 100644
+index 59a68b2..7365810 100644
 --- a/src/qmlcontrols/kconfig/CMakeLists.txt
 +++ b/src/qmlcontrols/kconfig/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(kconfigplugin_SRCS
@@ -3460,7 +3405,7 @@ index 59a68b2..7897d56 100644
          Qt5::Core
          Qt5::Qml
 diff --git a/src/qmlcontrols/kcoreaddons/CMakeLists.txt b/src/qmlcontrols/kcoreaddons/CMakeLists.txt
-index 3f77f2d..001b90e 100644
+index 3f77f2d..3c27e3b 100644
 --- a/src/qmlcontrols/kcoreaddons/CMakeLists.txt
 +++ b/src/qmlcontrols/kcoreaddons/CMakeLists.txt
 @@ -6,7 +6,7 @@ set(kcoreaddonsplugin_SRCS
@@ -3473,7 +3418,7 @@ index 3f77f2d..001b90e 100644
          Qt5::Core
          Qt5::Quick
 diff --git a/src/qmlcontrols/kioplugin/CMakeLists.txt b/src/qmlcontrols/kioplugin/CMakeLists.txt
-index 7b258e0..374ac1d 100644
+index 7b258e0..898c79f 100644
 --- a/src/qmlcontrols/kioplugin/CMakeLists.txt
 +++ b/src/qmlcontrols/kioplugin/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(kioplugin_SRCS
@@ -3486,7 +3431,7 @@ index 7b258e0..374ac1d 100644
          Qt5::Core
          Qt5::Qml
 diff --git a/src/qmlcontrols/kquickcontrols/private/CMakeLists.txt b/src/qmlcontrols/kquickcontrols/private/CMakeLists.txt
-index da355c1..48a8455 100644
+index da355c1..b624d1e 100644
 --- a/src/qmlcontrols/kquickcontrols/private/CMakeLists.txt
 +++ b/src/qmlcontrols/kquickcontrols/private/CMakeLists.txt
 @@ -6,7 +6,7 @@ set(kquickcontrolsprivate_SRCS
@@ -3499,7 +3444,7 @@ index da355c1..48a8455 100644
  target_link_libraries(kquickcontrolsprivateplugin
          Qt5::Core
 diff --git a/src/qmlcontrols/kquickcontrolsaddons/CMakeLists.txt b/src/qmlcontrols/kquickcontrolsaddons/CMakeLists.txt
-index f12474d..ed17a7d 100644
+index f12474d..84c1a68 100644
 --- a/src/qmlcontrols/kquickcontrolsaddons/CMakeLists.txt
 +++ b/src/qmlcontrols/kquickcontrolsaddons/CMakeLists.txt
 @@ -22,7 +22,7 @@ if (HAVE_EPOXY)
@@ -3512,7 +3457,7 @@ index f12474d..ed17a7d 100644
  target_link_libraries(kquickcontrolsaddonsplugin
          Qt5::Core
 diff --git a/src/qmlcontrols/kwindowsystemplugin/CMakeLists.txt b/src/qmlcontrols/kwindowsystemplugin/CMakeLists.txt
-index ce0ea74..9b55d9d 100644
+index ce0ea74..9c3892a 100644
 --- a/src/qmlcontrols/kwindowsystemplugin/CMakeLists.txt
 +++ b/src/qmlcontrols/kwindowsystemplugin/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(kwindowsystemplugin_SRCS
@@ -3566,7 +3511,7 @@ index 8aa5b88..27d28ec 100644
  include(ECMSetupVersion)
  include(ECMGenerateHeaders)
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
-index 6558616..919620e 100644
+index 6558616..492e3eb 100644
 --- a/src/declarative/CMakeLists.txt
 +++ b/src/declarative/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -3588,7 +3533,7 @@ index 23615bc..7a6d661 100644
  target_link_libraries (akonadi_kpeople_plugin
      ${KDEPIMLIBS_AKONADI_LIBS}
 diff --git a/src/widgets/CMakeLists.txt b/src/widgets/CMakeLists.txt
-index 66b1a5a..90e4117 100644
+index 66b1a5a..210f113 100644
 --- a/src/widgets/CMakeLists.txt
 +++ b/src/widgets/CMakeLists.txt
 @@ -15,7 +15,7 @@ ecm_qt_declare_logging_category(kpeople_widgets_SRCS HEADER kpeople_widgets_debu
