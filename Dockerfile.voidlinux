@@ -112,6 +112,9 @@ RUN sudo sh -c "echo \!\<arch\> > /usr/lib/libgcc_s.a"
 
 # RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
 
+# Install some fonts
+RUN sudo xbps-install dejavu-fonts-ttf
+
 COPY build-git-patch kde
 
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
