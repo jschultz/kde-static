@@ -4,6 +4,7 @@ global
     # This option is used to switch development tracks for many modules at
     # once. 'kf5-qt5' is the latest KF5 and Qt5-based software.
     branch-group stable-kf5-qt5
+    branch Applications/18.12
 
     # Directory for downloaded source code
     source-dir /home/kdedev/kde/source
