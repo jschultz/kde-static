@@ -240,7 +240,7 @@ index 9584e4994..6691d55b6 100644
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
 -add_library(okularpart SHARED ${okularpart_SRCS})
-+add_library(okularpart STATIC ${okularpart_SRCS})
++add_library(okularpart ${okularpart_SRCS})
  generate_export_header(okularpart BASE_NAME okularpart)
  
  target_link_libraries(okularpart okularcore
@@ -3584,7 +3584,7 @@ index 825bbb9..e72c2b1 100644
 +++ b/src/declarative/CMakeLists.txt
 @@ -1,4 +1,4 @@
 -add_library(kholidaysdeclarativeplugin SHARED kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
-+add_library(kholidaysdeclarativeplugin STATIC kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
++add_library(kholidaysdeclarativeplugin kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
  
  target_link_libraries(kholidaysdeclarativeplugin
    Qt5::Qml
