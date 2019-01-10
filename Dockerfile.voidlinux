@@ -90,6 +90,8 @@ RUN mkdir kde
 COPY kdesrc-buildrc.sources       kde
 COPY kf5-frameworks-build-include kde
 RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc.sources --src-only --include-dependencies okular
+# Need kholidays or patch will fail
+RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc.sources --src-only kholidays
 
 # Install more KDE dependencies
 RUN sudo xbps-install -y ccache \
