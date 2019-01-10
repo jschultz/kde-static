@@ -96,5 +96,5 @@ end module
 module-set kirigami
     repository kde-projects
     use-modules kirigami
+    tag v5.53.0
 end module-set
-
