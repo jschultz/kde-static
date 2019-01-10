@@ -4,14 +4,16 @@ global
     # This option is used to switch development tracks for many modules at
     # once. 'kf5-qt5' is the latest KF5 and Qt5-based software.
     branch-group stable-kf5-qt5
-    branch Applications/18.12
 
     # Directory for downloaded source code
     source-dir /home/kdedev/kde/source
 
 end global
 
+options okular
+    branch Applications/18.12
+end options
+
 # Refers to the kf5-frameworks file included as part of kdesrc-build. The file
 # is simply read-in at this point as if you'd typed it in yourself.
 include kf5-frameworks-build-include
-
