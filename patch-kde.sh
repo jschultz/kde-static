@@ -450,12 +450,13 @@ diff --git a/shell/main.cpp b/shell/main.cpp
 index 983690d08..3c6dd9ec6 100644
 --- a/shell/main.cpp
 +++ b/shell/main.cpp
-@@ -28,6 +28,9 @@
+@@ -28,6 +28,10 @@
  #include "okular_main.h"
  #include "shellutils.h"
  
 +#include <QtPlugin>
 +Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
++Q_IMPORT_PLUGIN(QSvgIconPlugin)
 +
  int main(int argc, char** argv)
  {
