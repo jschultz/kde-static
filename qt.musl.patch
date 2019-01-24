@@ -1,0 +1,19 @@
+--- qtbase/mkspecs/linux-g++/qmake.conf
++++ qtbase/mkspecs/linux-g++/qmake.conf
+@@ -9,4 +9,5 @@
+ include(../common/linux.conf)
+ include(../common/gcc-base-unix.conf)
+ include(../common/g++-unix.conf)
++QMAKE_LIBS_EXECINFO     = -lexecinfo
+ load(qt_config)
+--- qtlocation/src/3rdparty/mapbox-gl-native/platform/default/thread.cpp
++++ qtlocation/src/3rdparty/mapbox-gl-native/platform/default/thread.cpp
+@@ -11,7 +11,7 @@
+ 
+ std::string getCurrentThreadName() {
+     char name[32] = "unknown";
+-    pthread_getname_np(pthread_self(), name, sizeof(name));
++//    pthread_getname_np(pthread_self(), name, sizeof(name));
+ 
+     return name;
+ }

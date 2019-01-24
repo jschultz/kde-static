@@ -5,15 +5,15 @@ global
     # once. 'kf5-qt5' is the latest KF5 and Qt5-based software.
     branch-group stable-kf5-qt5
 
+    # Directory for downloaded source code
+    source-dir /home/kdedev/kde/source
+
     # The path to your Qt installation (default is empty, assumes Qt provided
     # by system)
     qtdir /home/kdedev/qt-everywhere-5.11.3
 
     # Install directory for KDE software
     kdedir /home/kdedev/kde/install
-
-    # Directory for downloaded source code
-    source-dir /home/kdedev/kde/source
 
     # Directory to build KDE into before installing
     # relative to source-dir by default
@@ -37,9 +37,6 @@ global
     
     set-env QT_STATICPLUGIN TRUE
 
-#     set-env PATH /home/kdedev/qt-everywhere-5.11.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-    # WTF happened to -lQt5LinuxAccessibilitySupport -lqtfreetype
     cmake-options -DPulseAudio_LIBRARIES="/home/kdedev/pulseaudio-10.0/debian/libpulse-dev/usr/lib/x86_64-linux-gnu/" -DCMAKE_BUILD_TYPE:STRING=release -DQT_STATICPLUGIN=TRUE -DBUILD_TESTING=TRUE -DTHREADS_PREFER_PTHREAD_FLAG=TRUE -DBUILD_SHARED_LIBS=FALSE -DCMAKE_LINK_SEARCH_START_STATIC=TRUE -DCMAKE_LINK_SEARCH_END_STATIC=TRUE -DCMAKE_CXX_FLAGS="-pthread -static -static-libgcc -static-libstdc++ -DQT_STATIC=1 -DQT_STATICPLUGIN=1 -D_GNU_SOURCE" -DCMAKE_C_FLAGS="-D_GNU_SOURCE" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DQt5_DIR=$HOME/qt-everywhere-5.11.3 -DQt5WebKitWidgets_DIR=/home/kdedev/qt-everywhere-5.11.3/lib/x86_64-linux-gnu/cmake/Qt5WebKitWidgets -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3 -DKDE_SKIP_RPATH_SETTINGS=TRUE
 
 end global
@@ -48,6 +45,4 @@ options okular
     branch Applications/18.12
 end options
 
-# Refers to the kf5-frameworks file included as part of kdesrc-build. The file
-# is simply read-in at this point as if you'd typed it in yourself.
 include kf5-frameworks-build-include

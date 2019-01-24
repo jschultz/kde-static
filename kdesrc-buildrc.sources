@@ -7,6 +7,8 @@ global
 
     # Directory for downloaded source code
     source-dir /home/kdedev/kde/source
+    
+    git-options --depth=1
 
 end global
 

@@ -54,7 +54,6 @@ module-set frameworks
     # if you use Make as build system add to cmake-options -G "CodeBlocks - Unix Makefiles"
     # if you use Ninja as build system add to cmake-options -G "CodeBlocks - Ninja"
     # see http://www.cmake.org/cmake/help/v3.0/generator/CodeBlocks.html
-    cmake-options -DBUILD_TESTING=FALSE
     tag v5.53.0
 end module-set
 
