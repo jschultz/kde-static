@@ -2,7 +2,7 @@ echo ./source/kdesupport/phonon/phonon
 git -C ./source/kdesupport/phonon/phonon checkout .
 patch -p1 -d ./source/kdesupport/phonon/phonon <<'EOF'
 diff --git a/cmake/PhononMacros.cmake b/cmake/PhononMacros.cmake
-index f829a486..c7032d92 100644
+index f829a486..115b32ae 100644
 --- a/cmake/PhononMacros.cmake
 +++ b/cmake/PhononMacros.cmake
 @@ -24,13 +24,13 @@ endmacro(phonon_add_executable _target)
@@ -10,14 +10,14 @@ index f829a486..c7032d92 100644
  macro(phonon_add_declarative_plugin _target)
      set(_srcs ${ARGN})
 -    add_library(${_target} MODULE ${_global_add_executable_param} ${_srcs})
-+    add_library(${_target} STATIC ${_global_add_executable_param} ${_srcs})
++    add_library(${_target} ${MODULE} ${_global_add_executable_param} ${_srcs})
  endmacro(phonon_add_declarative_plugin _target)
  
  macro(phonon_add_designer_plugin _target _qrc_file)
      set(_srcs ${ARGN})
      qt5_add_resources(_srcs ${_qrc_file})
 -    add_library(${_target} MODULE ${_global_add_executable_param} ${_srcs})
-+    add_library(${_target} STATIC ${_global_add_executable_param} ${_srcs})
++    add_library(${_target} ${MODULE} ${_global_add_executable_param} ${_srcs})
  endmacro(phonon_add_designer_plugin)
  
  macro (PHONON_UPDATE_ICONCACHE)
@@ -47,6 +47,51 @@ index e44cb7ac..b6e9c966 100644
  qt5_use_modules(${PHONON_LIB_SONAME}experimental Core Widgets)
  target_link_libraries(${PHONON_LIB_SONAME}experimental ${PHONON_LIBS})
  set_target_properties(${PHONON_LIB_SONAME}experimental PROPERTIES
+diff --git a/phonon/phonon_export.h b/phonon/phonon_export.h
+index 52d50cf8..c5c0597c 100644
+--- a/phonon/phonon_export.h
++++ b/phonon/phonon_export.h
+@@ -25,21 +25,25 @@
+ 
+ #include <QtCore/QtGlobal>
+ 
+-#ifndef PHONON_EXPORT
+-# if defined Q_WS_WIN
+-#  ifdef MAKE_PHONON_LIB /* We are building this library */
+-#   define PHONON_EXPORT Q_DECL_EXPORT
+-#  else /* We are using this library */
+-#   define PHONON_EXPORT Q_DECL_IMPORT
+-#  endif
+-# else /* UNIX */
+-#  ifdef MAKE_PHONON_LIB /* We are building this library */
+-#   define PHONON_EXPORT Q_DECL_EXPORT
+-#  else /* We are using this library */
+-#   define PHONON_EXPORT Q_DECL_IMPORT
+-#  endif
+-# endif
+-#endif
++if(BUILD_SHARED_LIBS)
++ ifndef PHONON_EXPORT
++  if defined Q_WS_WIN
++   ifdef MAKE_PHONON_LIB /* We are building this library */
++    define PHONON_EXPORT Q_DECL_EXPORT
++   else /* We are using this library */
++    define PHONON_EXPORT Q_DECL_IMPORT
++   endif
++  else /* UNIX */
++   ifdef MAKE_PHONON_LIB /* We are building this library */
++    define PHONON_EXPORT Q_DECL_EXPORT
++   else /* We are using this library */
++    define PHONON_EXPORT Q_DECL_IMPORT
++   endif
++  endif
++ endif
++else()
++ define PHONON_EXPORT
++endif
+ 
+ #ifndef PHONON_DEPRECATED
+ # define PHONON_DEPRECATED Q_DECL_DEPRECATED
 diff --git a/qt_phonon.pri b/qt_phonon.pri
 index 9936e8de..daf824f8 100644
 --- a/qt_phonon.pri
@@ -135,7 +180,7 @@ index bfa258b..101a335 100644
  
  target_link_libraries (qmobipocket
 diff --git a/thumbnailers/CMakeLists.txt b/thumbnailers/CMakeLists.txt
-index e9ff6ca..929224b 100644
+index e9ff6ca..5604996 100644
 --- a/thumbnailers/CMakeLists.txt
 +++ b/thumbnailers/CMakeLists.txt
 @@ -13,7 +13,7 @@ find_package(KF5 REQUIRED
@@ -143,7 +188,7 @@ index e9ff6ca..929224b 100644
      )
  
 -add_library(mobithumbnail MODULE ${mobithumbnail_SRCS})
-+add_library(mobithumbnail STATIC ${mobithumbnail_SRCS})
++add_library(mobithumbnail ${MODULE} ${mobithumbnail_SRCS})
  target_link_libraries(mobithumbnail KF5::KIOCore KF5::KIOWidgets Qt5::Gui qmobipocket)
  install(TARGETS mobithumbnail DESTINATION ${PLUGIN_INSTALL_DIR})
  
@@ -152,7 +197,7 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9584e4994..6691d55b6 100644
+index 9584e4994..06dbae05a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
@@ -164,32 +209,45 @@ index 9584e4994..6691d55b6 100644
  set (KDE_APPLICATIONS_VERSION "${KDE_APPLICATIONS_VERSION_MAJOR}.${KDE_APPLICATIONS_VERSION_MINOR}.${KDE_APPLICATIONS_VERSION_MICRO}")
  
  project(okular VERSION 1.6.${KDE_APPLICATIONS_VERSION_MICRO})
-@@ -33,6 +33,7 @@ ecm_setup_version(${PROJECT_VERSION}
+@@ -33,6 +33,16 @@ ecm_setup_version(${PROJECT_VERSION}
                    PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Okular5ConfigVersion.cmake")
  
  find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Core DBus Test Widgets PrintSupport Svg Qml Quick)
-+find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Concurrent X11Extras)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Concurrent)
++    if (X11_FOUND)
++        find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS X11Extras)
++    endif()
++    if (WIN32)
++        find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS WinExtras)
++    endif()
++endif()
++
  find_package(Qt5 ${QT_REQUIRED_VERSION} OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
      message(STATUS "Qt5TextToSpeech not found, speech features will be disabled")
-@@ -71,6 +72,7 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
+@@ -71,6 +81,9 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
      JS
      Wallet
  )
-+find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS DBusAddons GuiAddons Attica GlobalAccel)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS DBusAddons GuiAddons Attica)
++endif()
  
  if(KF5Wallet_FOUND)
      add_definitions(-DWITH_KWALLET=1)
-@@ -96,7 +98,7 @@ set_package_properties(KF5Kirigami2 PROPERTIES
+@@ -96,7 +109,9 @@ set_package_properties(KF5Kirigami2 PROPERTIES
      TYPE RUNTIME
  )
  find_package(Phonon4Qt5 CONFIG REQUIRED)
 -find_package(KDEExperimentalPurpose)
-+#find_package(KDEExperimentalPurpose)
++if(NOT WIN32)  # Just a guess
++    find_package(KDEExperimentalPurpose)
++endif()
  set_package_properties(KDEExperimentalPurpose PROPERTIES
      DESCRIPTION "A framework for services and actions integration"
      PURPOSE "Required for enabling the share menu in Okular"
-@@ -142,8 +144,8 @@ if(BUILD_COVERAGE)
+@@ -142,8 +157,8 @@ if(BUILD_COVERAGE)
  endif()
  
  add_subdirectory( ui )
@@ -199,18 +257,21 @@ index 9584e4994..6691d55b6 100644
  if(BUILD_TESTING)
     add_subdirectory( autotests )
     add_subdirectory( conf/autotests )
-@@ -247,7 +249,9 @@ ki18n_wrap_ui(okularcore_SRCS
+@@ -247,7 +262,12 @@ ki18n_wrap_ui(okularcore_SRCS
  
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
 -add_library(okularcore SHARED ${okularcore_SRCS})
-+file (READ "${CMAKE_BINARY_DIR}/generators_static_list.txt" generators_static)
-+
-+add_library(okularcore STATIC ${okularcore_SRCS})
++if (NOT BUILD_SHARED_LIBS)
++    file (READ "${CMAKE_BINARY_DIR}/generators_static_list.txt" generators_static)
++else ()
++    set(generators_static "")
++endif ()
++add_library(okularcore ${okularcore_SRCS})
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
-@@ -282,6 +286,7 @@ PRIVATE
+@@ -282,6 +302,7 @@ PRIVATE
      Phonon::phonon4qt5
      ${MATH_LIB}
      ${ZLIB_LIBRARIES}
@@ -218,24 +279,15 @@ index 9584e4994..6691d55b6 100644
  PUBLIC  # these are included from the installed headers
      KF5::CoreAddons
      KF5::XmlGui
-@@ -290,6 +295,7 @@ PUBLIC  # these are included from the installed headers
+@@ -290,7 +311,6 @@ PUBLIC  # these are included from the installed headers
      Qt5::Widgets
  )
  
-+target_link_libraries(okularcore PUBLIC ${generators_static})
- 
+-
  if (KF5Wallet_FOUND)
      target_link_libraries(okularcore PRIVATE KF5::Wallet)
-@@ -313,7 +319,7 @@ endif()
- 
- set_target_properties(okularcore PROPERTIES VERSION 9.0.0 SOVERSION 9 OUTPUT_NAME Okular5Core EXPORT_NAME Core)
- 
--install(TARGETS okularcore EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
-+install(TARGETS okularcore ${generators_static} EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
- 
- install(FILES conf/okular.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
- install(FILES conf/okular_core.kcfg DESTINATION ${KDE_INSTALL_KCFGDIR})
-@@ -400,7 +406,7 @@ ki18n_wrap_ui(okularpart_SRCS
+ endif()
+@@ -400,7 +420,7 @@ ki18n_wrap_ui(okularpart_SRCS
  
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
@@ -245,81 +297,83 @@ index 9584e4994..6691d55b6 100644
  
  target_link_libraries(okularpart okularcore
 diff --git a/core/document.cpp b/core/document.cpp
-index 3332c3a89..2146b76a7 100644
+index 3332c3a89..f3d95bcc4 100644
 --- a/core/document.cpp
 +++ b/core/document.cpp
-@@ -28,6 +28,7 @@
- 
- // qt/kde/system includes
- #include <QtAlgorithms>
-+#include <QDebug>
- #include <QDir>
- #include <QFile>
- #include <QFileInfo>
-@@ -45,6 +46,7 @@
+@@ -45,6 +45,9 @@
  #include <QDesktopServices>
  #include <QPageSize>
  #include <QStandardPaths>
++#ifndef BUILD_SHARED_LIBS
 +#include <QJsonDocument>
++#endif
  
  #include <kauthorized.h>
  #include <kconfigdialog.h>
-@@ -100,6 +102,10 @@
+@@ -100,6 +103,11 @@
  #include "malloc.h"
  #endif
  
++#ifndef BUILD_SHARED_LIBS
 +static QVector<KPluginMetaData> s_availableGenerators;
-+
 +#include "generators_static.h"
++#endif
 +
  using namespace Okular;
  
  struct AllocatedPixmap
-@@ -2215,6 +2221,12 @@ Document::Document( QWidget *widget )
+@@ -2215,6 +2223,13 @@ Document::Document( QWidget *widget )
      connect(d->m_undoStack, &QUndoStack::cleanChanged, this, &Document::undoHistoryCleanChanged);
  
      qRegisterMetaType<Okular::FontInfo>();
 +
++#ifndef BUILD_SHARED_LIBS
 +    KPluginFactory *factory;
 +    Generator * plugin;
 +    KPluginMetaData service;
 +#include "generators_static.i"
-+
++#endif
  }
  
  Document::~Document()
-@@ -2281,7 +2293,8 @@ QVector<KPluginMetaData> DocumentPrivate::availableGenerators()
+@@ -2281,7 +2296,11 @@ QVector<KPluginMetaData> DocumentPrivate::availableGenerators()
      static QVector<KPluginMetaData> result;
      if (result.isEmpty())
      {
--        result = KPluginLoader::findPlugins( QLatin1String ( "okular/generators" ) );
-+//         result = KPluginLoader::findPlugins( QLatin1String ( "okular/generators" ) );
++#ifndef BUILD_SHARED_LIBS
+         result = KPluginLoader::findPlugins( QLatin1String ( "okular/generators" ) );
++#else
 +        result = s_availableGenerators;
++#endif
      }
      return result;
  }
 diff --git a/core/document.h b/core/document.h
-index 37cad1f1d..bb7365c43 100644
+index 37cad1f1d..cf307d88b 100644
 --- a/core/document.h
 +++ b/core/document.h
-@@ -28,6 +28,8 @@
+@@ -28,6 +28,10 @@
  #include <QMimeType>
  #include <QUrl>
  
-+// #include <KPluginFactory>
++#ifdef BUILD_SHARED_LIBS
++#include <KPluginFactory>
++#endif
 +
  class QPrintDialog;
  class KBookmark;
  class KConfigDialog;
-@@ -35,6 +37,7 @@ class KPluginMetaData;
+@@ -35,6 +39,9 @@ class KPluginMetaData;
  class KXMLGUIClient;
  class DocumentItem;
  class QAbstractItemModel;
++#ifndef BUILD_SHARED_LIBS
 +class KPluginFactory;
++#endif
  
  namespace Okular {
  
-@@ -215,6 +218,7 @@ class OKULARCORE_EXPORT Document : public QObject
+@@ -215,6 +222,7 @@ class OKULARCORE_EXPORT Document : public QObject
              OpenError,          //< The document failed to open
              OpenNeedsPassword   //< The document needs a password to be opened or the one provided is not the correct
          };
@@ -327,33 +381,55 @@ index 37cad1f1d..bb7365c43 100644
  
          /**
           * Opens the document.
+diff --git a/core/synctex/synctex_parser_utils.c b/core/synctex/synctex_parser_utils.c
+index 70efcd716..3e3eb13eb 100644
+--- a/core/synctex/synctex_parser_utils.c
++++ b/core/synctex/synctex_parser_utils.c
+@@ -119,7 +119,7 @@ int _synctex_log(int level, const char * prompt, const char * reason, ...) {
+ 			result = _vsnprintf(buff, buffersize - 1, reason, arg);
+ 		}
+ 		if(-1 == result) {
+-			// could not make the buffer big enough or simply could not write to it
++			/* could not make the buffer big enough or simply could not write to it */
+ 			free(buff);
+ 			return -1;
+ 		}
 diff --git a/generators/CMakeLists.txt b/generators/CMakeLists.txt
-index 6feec81b3..0613e05aa 100644
+index 6feec81b3..ddaf40fe9 100644
 --- a/generators/CMakeLists.txt
 +++ b/generators/CMakeLists.txt
-@@ -5,6 +5,21 @@ function(okular_add_generator _target)
+@@ -5,6 +5,25 @@ function(okular_add_generator _target)
      INSTALL_NAMESPACE "okular/generators"
      SOURCES ${ARGN}
    )
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static_list.txt "${_target};")
++  if(NOT BUILD_SHARED_LIBS)
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static_list.txt "${_target};")
 +
-+  file(GLOB HEADER "generator_*.h")
-+  file(READ ${HEADER} header)
-+  string(REGEX REPLACE "^.*class ([^ ]+Generator) .*$" "\\1" class ${header})
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.h "#include \"${HEADER}\"\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "factory = new KPluginFactory();\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "factory->registerPlugin<${class}>();\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "plugin = factory->create<Okular::Generator>();\n")
-+  file(READ "lib${_target}.json" json)
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "service = KPluginMetaData(QJsonDocument::fromJson(R\"(${json})\").object(), QString(""));\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "GeneratorInfo info_${class}( plugin, service );\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "s_availableGenerators.append( service );\n")
-+  file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "d->m_loadedGenerators.insert( service.pluginId(), info_${class} );\n")
++    file(GLOB HEADER "generator_*.h")
++    file(READ ${HEADER} header)
++    string(REGEX REPLACE "^.*class ([^ ]+Generator) .*$" "\\1" class ${header})
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.h "#include \"${HEADER}\"\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "factory = new KPluginFactory();\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "factory->registerPlugin<${class}>();\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "plugin = factory->create<Okular::Generator>();\n")
++    file(READ "lib${_target}.json" json)
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "service = KPluginMetaData(QJsonDocument::fromJson(R\"(${json})\").object(), QString(""));\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "GeneratorInfo info_${class}( plugin, service );\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "s_availableGenerators.append( service );\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "d->m_loadedGenerators.insert( service.pluginId(), info_${class} );\n")
 +
++    install(TARGETS ${_target} EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
++  endif()
++  
  endfunction()
  
  set(LIBSPECTRE_MINIMUM_VERSION "0.2")
-@@ -132,7 +147,7 @@ add_subdirectory(ooo)
+@@ -128,11 +147,11 @@ endif(TIFF_FOUND)
+ 
+ add_subdirectory(xps)
+ 
+-add_subdirectory(ooo)
++# add_subdirectory(ooo)
  
  add_subdirectory(fictionbook)
  
@@ -363,7 +439,7 @@ index 6feec81b3..0613e05aa 100644
  add_subdirectory(fax)
  
 diff --git a/generators/chm/kio-msits/CMakeLists.txt b/generators/chm/kio-msits/CMakeLists.txt
-index 36e670628..d8061b32b 100644
+index 36e670628..e759c9e0e 100644
 --- a/generators/chm/kio-msits/CMakeLists.txt
 +++ b/generators/chm/kio-msits/CMakeLists.txt
 @@ -10,7 +10,7 @@ include_directories(
@@ -371,7 +447,7 @@ index 36e670628..d8061b32b 100644
  
  
 -add_library(kio_msits MODULE ${kio_msits_PART_SRCS})
-+add_library(kio_msits STATIC ${kio_msits_PART_SRCS})
++add_library(kio_msits ${MODULE} ${kio_msits_PART_SRCS})
  
  target_link_libraries(kio_msits  KF5::KIOCore Qt5::Core ${CHM_LIBRARY} Qt5::Network)
  
@@ -428,69 +504,92 @@ index 2866d3737..0c940cf96 100644
          m_dirtyHandler->start( 750 );
      }
 diff --git a/shell/CMakeLists.txt b/shell/CMakeLists.txt
-index 628f74be1..e99b484c7 100644
+index 628f74be1..26c08baec 100644
 --- a/shell/CMakeLists.txt
 +++ b/shell/CMakeLists.txt
-@@ -18,12 +18,13 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
+@@ -18,7 +18,11 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
  
  add_executable(okular ${okular_SRCS})
  
 -target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash)
-+target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash KF5::Archive okularcore okularpart)
++if(NOT BUILD_SHARED_LIBS)
++    target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash KF5::Archive okularcore okularpart)
++else()
++    target_link_libraries(okular KF5::Parts KF5::WindowSystem KF5::Crash)
++endif()
  if(TARGET KF5::Activities)
      target_compile_definitions(okular PUBLIC -DWITH_KACTIVITIES=1)
  
- 	target_link_libraries(okular KF5::Activities)
- endif()
-+target_link_libraries(okular okularcore)
- 
- install(TARGETS okular ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
- 
 diff --git a/shell/main.cpp b/shell/main.cpp
-index 983690d08..3c6dd9ec6 100644
+index 983690d08..5def94c69 100644
 --- a/shell/main.cpp
 +++ b/shell/main.cpp
-@@ -28,6 +28,10 @@
+@@ -28,6 +28,17 @@
  #include "okular_main.h"
  #include "shellutils.h"
  
++#ifndef BUILD_SHARED_LIBS
 +#include <QtPlugin>
++#if HAVE_X11
 +Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
++#endif
++#if defined _WIN32 || defined _WIN64
++Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 +Q_IMPORT_PLUGIN(QSvgIconPlugin)
++#endif
++#endif
 +
  int main(int argc, char** argv)
  {
      QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 diff --git a/shell/shell.cpp b/shell/shell.cpp
-index d3f0b3e49..ea7503627 100644
+index d3f0b3e49..cda3e33a1 100644
 --- a/shell/shell.cpp
 +++ b/shell/shell.cpp
-@@ -53,6 +53,8 @@
+@@ -37,7 +37,7 @@
+ #include <KToolBar>
+ #include <KRecentFilesAction>
+ #include <KServiceTypeTrader>
+-#include <KToggleFullScreenAction>
++#include <KToggleFullScreenAction>m
+ #include <KActionCollection>
+ #include <KWindowSystem>
+ #include <QTabWidget>
+@@ -53,6 +53,10 @@
  #include <KActivities/ResourceInstance>
  #endif
  
++#ifndef BUILD_SHARED_LIBS
 +#include "../part.h"
++#endif
 +
  // local includes
  #include "kdocumentviewer.h"
  #include "../interfaces/viewerinterface.h"
-@@ -79,19 +81,16 @@ Shell::Shell( const QString &serializedOptions )
+@@ -79,19 +83,29 @@ Shell::Shell( const QString &serializedOptions )
    setXMLFile(QStringLiteral("shell.rc"));
    m_fileformatsscanned = false;
    m_showMenuBarAction = nullptr;
--  // this routine will find and load our Part.  it finds the Part by
--  // name which is a bad idea usually.. but it's alright in this
--  // case since our Part is made for this Shell
--  KPluginLoader loader(QStringLiteral("okularpart"));
--  m_partFactory = loader.factory();
++  
++#ifdef BUILD_SHARED_LIBS
+   // this routine will find and load our Part.  it finds the Part by
+   // name which is a bad idea usually.. but it's alright in this
+   // case since our Part is made for this Shell
+   KPluginLoader loader(QStringLiteral("okularpart"));
+   m_partFactory = loader.factory();
++#else
 +  m_partFactory = new KPluginFactory();
++#endif
    if (!m_partFactory)
    {
      // if we couldn't find our Part, we exit since the Shell by
      // itself can't do anything useful
      m_isValid = false;
--    KMessageBox::error(this, i18n("Unable to find the Okular component: %1", loader.errorString()));
++#ifdef BUILD_SHARED_LIBS
+     KMessageBox::error(this, i18n("Unable to find the Okular component: %1", loader.errorString()));
++#else
 +    KMessageBox::error(this, i18n("Unable to find the Okular component"));
++#endif
      return;
    }
 +  m_partFactory->registerPlugin<Okular::Part>();
@@ -531,7 +630,7 @@ echo ./source/kde/kdenetwork/kaccounts-integration
 git -C ./source/kde/kdenetwork/kaccounts-integration checkout .
 patch -p1 -d ./source/kde/kdenetwork/kaccounts-integration <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 0d08576..7f84a1f 100644
+index 0d08576..3acd038 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -13,7 +13,7 @@ set(kaccounts_SRCS
@@ -539,12 +638,12 @@ index 0d08576..7f84a1f 100644
  ki18n_wrap_ui(kaccounts_SRCS kcm.ui types.ui services.ui)
  
 -add_library(kcm_kaccounts MODULE ${kaccounts_SRCS})
-+add_library(kcm_kaccounts STATIC ${kaccounts_SRCS})
++add_library(kcm_kaccounts ${MODULE} ${kaccounts_SRCS})
  kcoreaddons_desktop_to_json(kcm_kaccounts kcm_kaccounts.desktop)
  
  target_link_libraries(kcm_kaccounts
 diff --git a/src/daemon/CMakeLists.txt b/src/daemon/CMakeLists.txt
-index f037684..5271e39 100644
+index f037684..7c5d3eb 100644
 --- a/src/daemon/CMakeLists.txt
 +++ b/src/daemon/CMakeLists.txt
 @@ -4,7 +4,7 @@ set(accounts_daemon_SRCS
@@ -552,12 +651,12 @@ index f037684..5271e39 100644
  )
  
 -add_library(kded_accounts MODULE
-+add_library(kded_accounts STATIC
++add_library(kded_accounts ${MODULE}
      ${accounts_daemon_SRCS}
  )
  kcoreaddons_desktop_to_json(kded_accounts accounts.desktop)
 diff --git a/src/daemon/kio-webdav/CMakeLists.txt b/src/daemon/kio-webdav/CMakeLists.txt
-index f5f5ad4..bf2685e 100644
+index f5f5ad4..92ce4e3 100644
 --- a/src/daemon/kio-webdav/CMakeLists.txt
 +++ b/src/daemon/kio-webdav/CMakeLists.txt
 @@ -6,7 +6,7 @@ set(kio-webdav_SRCS
@@ -565,7 +664,7 @@ index f5f5ad4..bf2685e 100644
      removekioservice.cpp)
  
 -add_library(kaccounts_kio_webdav_plugin MODULE ${kio-webdav_SRCS})
-+add_library(kaccounts_kio_webdav_plugin STATIC ${kio-webdav_SRCS})
++add_library(kaccounts_kio_webdav_plugin ${MODULE} ${kio-webdav_SRCS})
  
  target_link_libraries(kaccounts_kio_webdav_plugin
      Qt5::Core
@@ -599,7 +698,7 @@ echo ./source/frameworks/sonnet
 git -C ./source/frameworks/sonnet checkout .
 patch -p1 -d ./source/frameworks/sonnet <<'EOF'
 diff --git a/src/plugins/aspell/CMakeLists.txt b/src/plugins/aspell/CMakeLists.txt
-index a29aab4..a459a67 100644
+index a29aab4..49d4daf 100644
 --- a/src/plugins/aspell/CMakeLists.txt
 +++ b/src/plugins/aspell/CMakeLists.txt
 @@ -7,7 +7,7 @@ include_directories( ${ASPELL_INCLUDE_DIR})
@@ -607,12 +706,12 @@ index a29aab4..a459a67 100644
  ecm_qt_declare_logging_category(sonnet_aspell_PART_SRCS HEADER aspell_debug.h IDENTIFIER SONNET_LOG_ASPELL CATEGORY_NAME sonnet.plugins.aspell)
  
 -add_library(sonnet_aspell MODULE ${sonnet_aspell_PART_SRCS})
-+add_library(sonnet_aspell STATIC ${sonnet_aspell_PART_SRCS})
++add_library(sonnet_aspell ${MODULE} ${sonnet_aspell_PART_SRCS})
  
  target_link_libraries(sonnet_aspell PRIVATE KF5::SonnetCore ${ASPELL_LIBRARIES})
  
 diff --git a/src/plugins/enchant/CMakeLists.txt b/src/plugins/enchant/CMakeLists.txt
-index 72d6d65..3a94d76 100644
+index 72d6d65..c91e4ce 100644
 --- a/src/plugins/enchant/CMakeLists.txt
 +++ b/src/plugins/enchant/CMakeLists.txt
 @@ -6,7 +6,7 @@ include_directories( ${ENCHANT_INCLUDE_DIR} "${ENCHANT_INCLUDE_DIR}/.." )
@@ -620,12 +719,12 @@ index 72d6d65..3a94d76 100644
  
  
 -add_library(kspell_enchant MODULE ${kspell_enchant_PART_SRCS})
-+add_library(kspell_enchant STATIC ${kspell_enchant_PART_SRCS})
++add_library(kspell_enchant ${MODULE} ${kspell_enchant_PART_SRCS})
  
  target_link_libraries(kspell_enchant PRIVATE KF5::SonnetCore ${ENCHANT_LIBRARIES})
  
 diff --git a/src/plugins/hspell/CMakeLists.txt b/src/plugins/hspell/CMakeLists.txt
-index c2dc2d4..30036c1 100644
+index c2dc2d4..32bbd9c 100644
 --- a/src/plugins/hspell/CMakeLists.txt
 +++ b/src/plugins/hspell/CMakeLists.txt
 @@ -14,7 +14,7 @@ set(sonnet_hspell_PART_SRCS hspellclient.cpp hspelldict.cpp)
@@ -633,12 +732,12 @@ index c2dc2d4..30036c1 100644
  ecm_qt_declare_logging_category(sonnet_hspell_PART_SRCS HEADER hspell_debug.h IDENTIFIER SONNET_LOG_HSPELL CATEGORY_NAME sonnet.plugins.hspell)
  
 -add_library(sonnet_hspell MODULE ${sonnet_hspell_PART_SRCS})
-+add_library(sonnet_hspell STATIC ${sonnet_hspell_PART_SRCS})
++add_library(sonnet_hspell ${MODULE} ${sonnet_hspell_PART_SRCS})
  
  target_link_libraries(sonnet_hspell PRIVATE KF5::SonnetCore ${HSPELL_LIBRARIES} ${ZLIB_LIBRARY})
  
 diff --git a/src/plugins/hunspell/CMakeLists.txt b/src/plugins/hunspell/CMakeLists.txt
-index 8fd9081..2e77728 100644
+index 8fd9081..ebce2ea 100644
 --- a/src/plugins/hunspell/CMakeLists.txt
 +++ b/src/plugins/hunspell/CMakeLists.txt
 @@ -13,7 +13,7 @@ message(STATUS "Using old hunspell API: ${USE_OLD_HUNSPELL_API}")
@@ -646,12 +745,12 @@ index 8fd9081..2e77728 100644
  configure_file(config-hunspell.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-hunspell.h)
  
 -add_library(sonnet_hunspell MODULE ${sonnet_hunspell_PART_SRCS})
-+add_library(sonnet_hunspell STATIC ${sonnet_hunspell_PART_SRCS})
++add_library(sonnet_hunspell ${MODULE} ${sonnet_hunspell_PART_SRCS})
  target_include_directories(sonnet_hunspell SYSTEM PUBLIC ${HUNSPELL_INCLUDE_DIRS})
  target_link_libraries(sonnet_hunspell PRIVATE KF5::SonnetCore ${HUNSPELL_LIBRARIES})
  target_compile_definitions(sonnet_hunspell PRIVATE DEFINITIONS SONNET_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 diff --git a/src/plugins/nsspellchecker/CMakeLists.txt b/src/plugins/nsspellchecker/CMakeLists.txt
-index f79f745..e8cfa8d 100644
+index f79f745..a31430f 100644
 --- a/src/plugins/nsspellchecker/CMakeLists.txt
 +++ b/src/plugins/nsspellchecker/CMakeLists.txt
 @@ -7,7 +7,7 @@ ecm_qt_declare_logging_category(sonnet_nsspellchecker_PART_SRCS
@@ -659,12 +758,12 @@ index f79f745..e8cfa8d 100644
      CATEGORY_NAME sonnet.plugins.nsspellchecker)
  
 -add_library(sonnet_nsspellchecker MODULE ${sonnet_nsspellchecker_PART_SRCS})
-+add_library(sonnet_nsspellchecker STATIC ${sonnet_nsspellchecker_PART_SRCS})
++add_library(sonnet_nsspellchecker ${MODULE} ${sonnet_nsspellchecker_PART_SRCS})
  
  target_link_libraries(sonnet_nsspellchecker PRIVATE KF5::SonnetCore "-framework AppKit")
  
 diff --git a/src/plugins/voikko/CMakeLists.txt b/src/plugins/voikko/CMakeLists.txt
-index ca22424..10c8212 100644
+index ca22424..4adcb52 100644
 --- a/src/plugins/voikko/CMakeLists.txt
 +++ b/src/plugins/voikko/CMakeLists.txt
 @@ -6,7 +6,7 @@ include_directories(${VOIKKO_INCLUDE_DIR})
@@ -672,7 +771,7 @@ index ca22424..10c8212 100644
  ecm_qt_declare_logging_category(sonnet_voikko_PART_SRCS HEADER voikkodebug.h IDENTIFIER SONNET_VOIKKO CATEGORY_NAME sonnet.plugins.voikko)
  
 -add_library(sonnet_voikko MODULE ${sonnet_voikko_PART_SRCS})
-+add_library(sonnet_voikko STATIC ${sonnet_voikko_PART_SRCS})
++add_library(sonnet_voikko ${MODULE} ${sonnet_voikko_PART_SRCS})
  
  target_link_libraries(sonnet_voikko PRIVATE KF5::SonnetCore ${VOIKKO_LIBRARIES})
  
@@ -681,15 +780,16 @@ echo ./source/frameworks/kactivities
 git -C ./source/frameworks/kactivities checkout .
 patch -p1 -d ./source/frameworks/kactivities <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index fd0bd15..e0403aa 100644
+index 5000778..d3143df 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -43,7 +43,7 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
- 
+@@ -44,6 +44,9 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
  # Qt
  set (CMAKE_AUTOMOC ON)
--find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Core DBus)
-+find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Core DBus X11Extras)
+ find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Core DBus)
++if (X11_FOUND)
++    find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS X11Extras)
++endif ()
  
  # Basic includes
  include (CPack)
@@ -724,27 +824,32 @@ echo ./source/frameworks/knewstuff
 git -C ./source/frameworks/knewstuff checkout .
 patch -p1 -d ./source/frameworks/knewstuff <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0059d4c..5755561 100644
+index 8389685..5a3446a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -16,7 +16,7 @@ include(KDECMakeSettings)
+@@ -16,7 +16,10 @@ include(KDECMakeSettings)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  
  set(REQUIRED_QT_VERSION 5.9.0)
 -find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS Widgets Xml)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS Widgets Xml Concurrent PrintSupport Svg TextToSpeech X11Extras)
++find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS Widgets Xml Concurrent PrintSupport Svg TextToSpeech)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS X11Extras)
++endif ()
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE COMPONENTS Qml Quick)
  
  find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-@@ -31,6 +31,11 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+@@ -31,6 +34,13 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  include(GenerateExportHeader)
  include(ECMSetupVersion)
@@ -753,7 +858,7 @@ echo ./source/frameworks/kimageformats
 git -C ./source/frameworks/kimageformats checkout .
 patch -p1 -d ./source/frameworks/kimageformats <<'EOF'
 diff --git a/src/imageformats/CMakeLists.txt b/src/imageformats/CMakeLists.txt
-index 0dc9707..2e451fd 100644
+index 0dc9707..15a5619 100644
 --- a/src/imageformats/CMakeLists.txt
 +++ b/src/imageformats/CMakeLists.txt
 @@ -15,7 +15,7 @@ function(kimageformats_add_plugin plugin)
@@ -761,7 +866,7 @@ index 0dc9707..2e451fd 100644
      endif()
  
 -    add_library(${plugin} MODULE ${KIF_ADD_PLUGIN_SOURCES})
-+    add_library(${plugin} STATIC ${KIF_ADD_PLUGIN_SOURCES})
++    add_library(${plugin} ${MODULE} ${KIF_ADD_PLUGIN_SOURCES})
      set_property(TARGET ${plugin} APPEND PROPERTY AUTOGEN_TARGET_DEPENDS ${json})
      set_target_properties(${plugin} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/imageformats")
      target_link_libraries(${plugin} Qt5::Gui)
@@ -770,36 +875,42 @@ echo ./source/frameworks/krunner
 git -C ./source/frameworks/krunner checkout .
 patch -p1 -d ./source/frameworks/krunner <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 742ea5c..a42d8ee 100644
+index 506d155..ef6aa1a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -36,7 +36,7 @@ ecm_setup_version(PROJECT
- # Dependencies
+@@ -37,6 +37,12 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick Sql Svg X11Extras PrintSupport TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED  Sql Svg PrintSupport TextToSpeech)
++endif()
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED X11Extras)
++endif ()
  
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-@@ -45,6 +45,20 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+@@ -45,6 +51,22 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Plasma ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ThreadWeaver ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Declarative ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
-+
-+find_package(Phonon4Qt5 4.6.60 REQUIRED)
-+find_package(XCB COMPONENTS XCB)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Declarative ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Notifications ${KF5_DEP_VERSION} REQUIRED)
++    
++    find_package(Phonon4Qt5 4.6.60 REQUIRED)
++    find_package(XCB COMPONENTS XCB)
++endif()
  
  set(KRunner_AUTOMOC_MACRO_NAMES "K_EXPORT_PLASMA_RUNNER" "K_EXPORT_RUNNER_CONFIG")
  if(NOT CMAKE_VERSION VERSION_LESS "3.10.0")
@@ -817,7 +928,7 @@ index 83837b0..0f0a792 100644
          Qt5::Quick
          Qt5::Qml
 diff --git a/templates/runner/src/CMakeLists.txt b/templates/runner/src/CMakeLists.txt
-index b6fabfd..920e6b8 100644
+index b6fabfd..0a0e059 100644
 --- a/templates/runner/src/CMakeLists.txt
 +++ b/templates/runner/src/CMakeLists.txt
 @@ -2,7 +2,7 @@ add_definitions(-DTRANSLATION_DOMAIN=\"plasma_runner_org.kde.%{APPNAMELC}\")
@@ -825,7 +936,7 @@ index b6fabfd..920e6b8 100644
  set(%{APPNAMELC}_SRCS %{APPNAMELC}.cpp)
  
 -add_library(krunner_%{APPNAMELC} MODULE ${%{APPNAMELC}_SRCS})
-+add_library(krunner_%{APPNAMELC} STATIC ${%{APPNAMELC}_SRCS})
++add_library(krunner_%{APPNAMELC} ${MODULE} ${%{APPNAMELC}_SRCS})
  target_link_libraries(krunner_%{APPNAMELC} KF5::Runner KF5::I18n)
  
  install(TARGETS krunner_%{APPNAMELC} DESTINATION ${KDE_INSTALL_PLUGINDIR})
@@ -851,48 +962,66 @@ echo ./source/frameworks/kxmlrpcclient
 git -C ./source/frameworks/kxmlrpcclient checkout .
 patch -p1 -d ./source/frameworks/kxmlrpcclient <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 329308acd..7fbe1124d 100644
+index 3b81a4e3a..acb850147 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -36,8 +36,13 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
+@@ -36,9 +36,20 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
  )
  
  ########### Find packages ###########
-+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Concurrent X11Extras)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Concurrent)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS X11Extras)
++    endif ()
++endif ()
 +
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5KIO ${KF5_DEP_VERSION} CONFIG REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
- 
+-
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++endif()
  if(BUILD_TESTING)
     add_definitions(-DBUILD_TESTING)
+ endif(BUILD_TESTING)
 EOF
 echo ./source/frameworks/ktextwidgets
 git -C ./source/frameworks/ktextwidgets checkout .
 patch -p1 -d ./source/frameworks/ktextwidgets <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e233efc..f9bb220 100644
+index a0142ca..8061330 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -31,7 +31,7 @@ ecm_setup_version(PROJECT
- # Dependencies
+@@ -32,6 +32,16 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus X11Extras Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
++
  
  find_package(Qt5 OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
-@@ -49,6 +49,10 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+@@ -49,6 +59,12 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Sonnet ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  option(BUILD_QCH "Build API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)" OFF)
  add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)")
@@ -901,26 +1030,35 @@ echo ./source/frameworks/kinit
 git -C ./source/frameworks/kinit checkout .
 patch -p1 -d ./source/frameworks/kinit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ca6d149..bf12157 100644
+index 313f631..f72519d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -10,7 +10,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+@@ -11,6 +11,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Core Gui DBus)
-+find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Core Gui DBus X11Extras Concurrent Svg)
+ find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Core Gui DBus)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Concurrent Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif() 
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -54,6 +54,10 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+@@ -54,6 +63,12 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION})
-+find_package(KF5IconThemes ${KF5_DEP_VERSION})
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION})
-+find_package(KF5Archive ${KF5_DEP_VERSION})
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION})
++    find_package(KF5IconThemes ${KF5_DEP_VERSION})
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION})
++    find_package(KF5Archive ${KF5_DEP_VERSION})
++endif()
  
  if (NOT WIN32)
  find_package(Libcap)
@@ -959,7 +1097,7 @@ echo ./source/frameworks/kfilemetadata
 git -C ./source/frameworks/kfilemetadata checkout .
 patch -p1 -d ./source/frameworks/kfilemetadata <<'EOF'
 diff --git a/src/extractors/CMakeLists.txt b/src/extractors/CMakeLists.txt
-index 15399f7..7aee8a6 100644
+index 15399f7..b514f40 100644
 --- a/src/extractors/CMakeLists.txt
 +++ b/src/extractors/CMakeLists.txt
 @@ -1,7 +1,7 @@
@@ -967,7 +1105,7 @@ index 15399f7..7aee8a6 100644
  
  if(Poppler_Qt5_FOUND)
 -    add_library(kfilemetadata_popplerextractor MODULE popplerextractor.cpp)
-+    add_library(kfilemetadata_popplerextractor STATIC popplerextractor.cpp)
++    add_library(kfilemetadata_popplerextractor ${MODULE} popplerextractor.cpp)
  
      target_link_libraries(kfilemetadata_popplerextractor
          KF5::FileMetaData
@@ -976,7 +1114,7 @@ index 15399f7..7aee8a6 100644
  
  if(TAGLIB_FOUND)
 -    add_library(kfilemetadata_taglibextractor MODULE taglibextractor.cpp )
-+       add_library(kfilemetadata_taglibextractor STATIC taglibextractor.cpp )
++       add_library(kfilemetadata_taglibextractor ${MODULE} taglibextractor.cpp )
      target_include_directories(kfilemetadata_taglibextractor SYSTEM PRIVATE ${TAGLIB_INCLUDES})
      target_link_libraries( kfilemetadata_taglibextractor
          KF5::FileMetaData
@@ -985,7 +1123,7 @@ index 15399f7..7aee8a6 100644
  
  if(LibExiv2_FOUND)
 -    add_library(kfilemetadata_exiv2extractor MODULE exiv2extractor.cpp)
-+    add_library(kfilemetadata_exiv2extractor STATIC exiv2extractor.cpp)
++    add_library(kfilemetadata_exiv2extractor ${MODULE} exiv2extractor.cpp)
      kde_target_enable_exceptions(kfilemetadata_exiv2extractor PRIVATE)
      target_link_libraries(kfilemetadata_exiv2extractor
          KF5::FileMetaData
@@ -994,7 +1132,7 @@ index 15399f7..7aee8a6 100644
  
  if(FFMPEG_FOUND)
 -    add_library(kfilemetadata_ffmpegextractor MODULE ffmpegextractor.cpp)
-+    add_library(kfilemetadata_ffmpegextractor STATIC ffmpegextractor.cpp)
++    add_library(kfilemetadata_ffmpegextractor ${MODULE} ffmpegextractor.cpp)
      target_include_directories(kfilemetadata_ffmpegextractor SYSTEM PRIVATE ${AVCODEC_INCLUDE_DIRS} ${AVFORMAT_INCLUDE_DIRS} ${AVUTIL_INCLUDE_DIRS})
      target_link_libraries(kfilemetadata_ffmpegextractor
          KF5::FileMetaData
@@ -1003,7 +1141,7 @@ index 15399f7..7aee8a6 100644
  
  if(EPUB_FOUND)
 -    add_library(kfilemetadata_epubextractor MODULE epubextractor.cpp)
-+    add_library(kfilemetadata_epubextractor STATIC epubextractor.cpp)
++    add_library(kfilemetadata_epubextractor ${MODULE} epubextractor.cpp)
      target_include_directories(kfilemetadata_epubextractor SYSTEM PRIVATE ${EPUB_INCLUDE_DIR})
      target_link_libraries(kfilemetadata_epubextractor
          KF5::FileMetaData
@@ -1012,7 +1150,7 @@ index 15399f7..7aee8a6 100644
  # Plain Text
  #
 -add_library(kfilemetadata_plaintextextractor MODULE plaintextextractor.cpp)
-+add_library(kfilemetadata_plaintextextractor STATIC plaintextextractor.cpp)
++add_library(kfilemetadata_plaintextextractor ${MODULE} plaintextextractor.cpp)
  
  target_link_libraries( kfilemetadata_plaintextextractor
      KF5::FileMetaData
@@ -1021,7 +1159,7 @@ index 15399f7..7aee8a6 100644
  # PO
  #
 -add_library(kfilemetadata_poextractor MODULE poextractor.cpp)
-+add_library(kfilemetadata_poextractor STATIC poextractor.cpp)
++add_library(kfilemetadata_poextractor ${MODULE} poextractor.cpp)
  target_link_libraries( kfilemetadata_poextractor
      KF5::FileMetaData
  )
@@ -1030,7 +1168,7 @@ index 15399f7..7aee8a6 100644
  # XML
  #
 -add_library(kfilemetadata_xmlextractor MODULE
-+add_library(kfilemetadata_xmlextractor STATIC
++add_library(kfilemetadata_xmlextractor ${MODULE}
     dublincoreextractor.cpp
     xmlextractor.cpp
     ../kfilemetadata_debug.cpp
@@ -1039,7 +1177,7 @@ index 15399f7..7aee8a6 100644
  # Postscript DSC
  #
 -add_library(kfilemetadata_postscriptdscextractor MODULE
-+add_library(kfilemetadata_postscriptdscextractor STATIC
++add_library(kfilemetadata_postscriptdscextractor ${MODULE}
     postscriptdscextractor.cpp
     ../kfilemetadata_debug.cpp
  )
@@ -1048,7 +1186,7 @@ index 15399f7..7aee8a6 100644
  
  if(KF5Archive_FOUND)
 -    add_library(kfilemetadata_odfextractor MODULE odfextractor.cpp)
-+    add_library(kfilemetadata_odfextractor STATIC odfextractor.cpp)
++    add_library(kfilemetadata_odfextractor ${MODULE} odfextractor.cpp)
  
      target_link_libraries(kfilemetadata_odfextractor
          KF5::FileMetaData
@@ -1057,7 +1195,7 @@ index 15399f7..7aee8a6 100644
  
  if(KF5Archive_FOUND)
 -    add_library(kfilemetadata_office2007extractor MODULE office2007extractor.cpp)
-+    add_library(kfilemetadata_office2007extractor STATIC office2007extractor.cpp)
++    add_library(kfilemetadata_office2007extractor ${MODULE} office2007extractor.cpp)
  
      target_link_libraries(kfilemetadata_office2007extractor
          KF5::FileMetaData
@@ -1066,7 +1204,7 @@ index 15399f7..7aee8a6 100644
  #
  
 -add_library(kfilemetadata_officeextractor MODULE officeextractor.cpp)
-+add_library(kfilemetadata_officeextractor STATIC officeextractor.cpp)
++add_library(kfilemetadata_officeextractor ${MODULE} officeextractor.cpp)
  
  target_link_libraries(kfilemetadata_officeextractor
      KF5::FileMetaData
@@ -1075,18 +1213,18 @@ index 15399f7..7aee8a6 100644
  #
  if (QMOBIPOCKET_FOUND)
 -    add_library(kfilemetadata_mobiextractor MODULE mobiextractor.cpp)
-+    add_library(kfilemetadata_mobiextractor STATIC mobiextractor.cpp)
++    add_library(kfilemetadata_mobiextractor ${MODULE} mobiextractor.cpp)
      target_include_directories(kfilemetadata_mobiextractor SYSTEM PRIVATE ${QMOBIPOCKET_INCLUDE_DIR})
      target_link_libraries(kfilemetadata_mobiextractor
          KF5::FileMetaData
 diff --git a/src/writers/CMakeLists.txt b/src/writers/CMakeLists.txt
-index 864dc51..11d80cf 100644
+index 864dc51..adfce40 100644
 --- a/src/writers/CMakeLists.txt
 +++ b/src/writers/CMakeLists.txt
 @@ -1,5 +1,5 @@
  if(TAGLIB_FOUND)
 -    add_library(kfilemetadata_taglibwriter MODULE taglibwriter.cpp)
-+    add_library(kfilemetadata_taglibwriter STATIC taglibwriter.cpp)
++    add_library(kfilemetadata_taglibwriter ${MODULE} taglibwriter.cpp)
      target_include_directories(kfilemetadata_taglibwriter SYSTEM PRIVATE ${TAGLIB_INCLUDES})
  
      target_link_libraries( kfilemetadata_taglibwriter
@@ -1095,31 +1233,34 @@ echo ./source/frameworks/khtml
 git -C ./source/frameworks/khtml checkout .
 patch -p1 -d ./source/frameworks/khtml <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index d5fdf01..5e81e4a 100644
+index 52a55d5..3d66b3c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -19,7 +19,7 @@ include(ECMQtDeclareLoggingCategory)
- 
+@@ -20,6 +20,9 @@ include(ECMQtDeclareLoggingCategory)
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Widgets Network DBus PrintSupport Xml)
-+find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Widgets Network DBus PrintSupport Xml Concurrent Svg TextToSpeech)
+ find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Widgets Network DBus PrintSupport Xml)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Concurrent Svg TextToSpeech)
++endif()
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -42,6 +42,10 @@ find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
+@@ -42,6 +45,12 @@ find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  ecm_setup_version(PROJECT VARIABLE_PREFIX KHTML
                          VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/khtml_version.h"
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index a593599..2aa7a42 100644
+index a593599..9b8c69d 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -727,7 +727,7 @@ create_js_binding(html/HTMLVideoElement.idl)
@@ -1127,7 +1268,7 @@ index a593599..2aa7a42 100644
  
  
 -add_library(khtmlpart MODULE ${khtmlpart_PART_SRCS})
-+add_library(khtmlpart ${khtmlpart_PART_SRCS})
++add_library(khtmlpart ${MODULE} ${khtmlpart_PART_SRCS})
  
  target_link_libraries(khtmlpart KF5::KHtml KF5::XmlGui KF5::TextWidgets KF5::Parts KF5::I18n)
  
@@ -1136,7 +1277,7 @@ index a593599..2aa7a42 100644
  # Note that khtmlimage.cpp is part of libkhtml because it uses internal objects (render tree and loader)
  # Only the entry point is separated into khtmlimage_init.cpp
 -add_library(khtmlimagepart MODULE khtmlimage_init.cpp)
-+add_library(khtmlimagepart khtmlimage_init.cpp)
++add_library(khtmlimagepart ${MODULE} khtmlimage_init.cpp)
  
  kservice_desktop_to_json(khtmlimagepart khtmlimage.desktop)
  
@@ -1145,7 +1286,7 @@ index a593599..2aa7a42 100644
  ########### next target ###############
  
 -add_library(khtmladaptorpart MODULE khtmladaptorpart.cpp)
-+add_library(khtmladaptorpart khtmladaptorpart.cpp)
++add_library(khtmladaptorpart ${MODULE} khtmladaptorpart.cpp)
  
  target_link_libraries(khtmladaptorpart KF5::Parts KF5::JS KF5::I18n KF5::XmlGui)
  
@@ -1176,7 +1317,7 @@ index 90ba88a..45769e3 100644
  /*   This file is part of the KDE libraries
    
 diff --git a/src/java/CMakeLists.txt b/src/java/CMakeLists.txt
-index 4f9a629..a42b3d8 100644
+index 4f9a629..5218e52 100644
 --- a/src/java/CMakeLists.txt
 +++ b/src/java/CMakeLists.txt
 @@ -14,7 +14,7 @@ set(kjavaappletviewer_PART_SRCS
@@ -1184,12 +1325,12 @@ index 4f9a629..a42b3d8 100644
  ecm_qt_declare_logging_category(kjavaappletviewer_PART_SRCS HEADER kjavaappletviewer_debug.h IDENTIFIER KJAVAAPPLETVIEWER_LOG CATEGORY_NAME kf5.khtml.javaappletviewer)
  
 -add_library(kjavaappletviewer MODULE ${kjavaappletviewer_PART_SRCS})
-+add_library(kjavaappletviewer ${kjavaappletviewer_PART_SRCS})
++add_library(kjavaappletviewer ${MODULE} ${kjavaappletviewer_PART_SRCS})
  
  target_link_libraries(kjavaappletviewer
                        Qt5::Network
 diff --git a/src/kmultipart/CMakeLists.txt b/src/kmultipart/CMakeLists.txt
-index 31b456f..2efeaa5 100644
+index 31b456f..c6b280c 100644
 --- a/src/kmultipart/CMakeLists.txt
 +++ b/src/kmultipart/CMakeLists.txt
 @@ -8,7 +8,7 @@ include_directories(${ZLIB_INCLUDE_DIR})
@@ -1197,7 +1338,7 @@ index 31b456f..2efeaa5 100644
  set(kmultipart_PART_SRCS kmultipart.cpp httpfiltergzip.cpp)
  ecm_qt_declare_logging_category(kmultipart_PART_SRCS HEADER kmultipart_debug.h IDENTIFIER KMULTIPART_LOG CATEGORY_NAME kf5.khtml.multipart)
 -add_library(kmultipart MODULE ${kmultipart_PART_SRCS})
-+add_library(kmultipart ${kmultipart_PART_SRCS})
++add_library(kmultipart ${MODULE} ${kmultipart_PART_SRCS})
  
  target_link_libraries(kmultipart
                          ${ZLIB_LIBRARY}
@@ -1206,7 +1347,7 @@ echo ./source/frameworks/kirigami
 git -C ./source/frameworks/kirigami checkout .
 patch -p1 -d ./source/frameworks/kirigami <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index bd49133..9f95605 100644
+index 103d763..f241f24 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,13 +17,13 @@ endif()
@@ -1322,35 +1463,51 @@ index 3e1c35a..1579831 100644
  
  install(TARGETS kirigamiplugin DESTINATION ${KDE_INSTALL_QMLDIR}/org/kde/kirigami.2)
 EOF
+echo ./source/frameworks/kholidays
+git -C ./source/frameworks/kholidays checkout .
+patch -p1 -d ./source/frameworks/kholidays <<'EOF'
+diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
+index 825bbb9..f8f02b8 100644
+--- a/src/declarative/CMakeLists.txt
++++ b/src/declarative/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-add_library(kholidaysdeclarativeplugin SHARED kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
++add_library(kholidaysdeclarativeplugin kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
+ 
+ target_link_libraries(kholidaysdeclarativeplugin
+   Qt5::Qml
+EOF
 echo ./source/frameworks/kdelibs4support
 git -C ./source/frameworks/kdelibs4support checkout .
 patch -p1 -d ./source/frameworks/kdelibs4support <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 152cea79..7e5274ab 100644
+index 62bb1d05..ff48350b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -20,7 +20,7 @@ include(GenerateExportHeader)
- include(CMakeFindFrameworks)
+@@ -21,6 +21,9 @@ include(CMakeFindFrameworks)
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Network Widgets DBus Test Svg PrintSupport Designer)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Network Widgets DBus Test Svg PrintSupport Concurrent TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Network Widgets DBus Test Svg PrintSupport Designer)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent TextToSpeech)
++endif()
  
  find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
-@@ -44,6 +44,10 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+@@ -44,6 +47,11 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KDED ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+
-+find_package(Phonon4Qt5 4.6.60 NO_MODULE)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(Phonon4Qt5 4.6.60 NO_MODULE)
++endif()
  
  if(WIN32)
      find_package(KDEWin REQUIRED)
 diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
-index 2d9d3af0..cdff4882 100644
+index 2d9d3af0..04c48a98 100644
 --- a/autotests/CMakeLists.txt
 +++ b/autotests/CMakeLists.txt
 @@ -78,7 +78,7 @@ if(NOT KDELIBS4SUPPORT_NO_DEPRECATED)
@@ -1358,7 +1515,7 @@ index 2d9d3af0..cdff4882 100644
    set(klibloadertestmodule3_PART_SRCS klibloadertest3_module.cpp )
  
 -  add_library(klibloadertestmodule3 MODULE ${klibloadertestmodule3_PART_SRCS})
-+  add_library(klibloadertestmodule3 STATIC ${klibloadertestmodule3_PART_SRCS})
++  add_library(klibloadertestmodule3 ${MODULE} ${klibloadertestmodule3_PART_SRCS})
    set_target_properties(klibloadertestmodule3 PROPERTIES PREFIX "") # remove lib prefix - missing from cmake
  
    target_link_libraries(klibloadertestmodule3 KF5::KDELibs4Support Qt5::Test KF5::I18n KF5::Service KF5::CoreAddons)
@@ -1367,7 +1524,7 @@ index 2d9d3af0..cdff4882 100644
  set(klibloadertestmodule5_PART_SRCS klibloadertest5_module.cpp )
  
 -add_library(klibloadertestmodule5 MODULE ${klibloadertestmodule5_PART_SRCS})
-+add_library(klibloadertestmodule5 STATIC ${klibloadertestmodule5_PART_SRCS})
++add_library(klibloadertestmodule5 ${MODULE} ${klibloadertestmodule5_PART_SRCS})
  ecm_mark_as_test(klibloadertestmodule5)
  set_target_properties(klibloadertestmodule5 PROPERTIES PREFIX "") # remove lib prefix - missing from cmake
  
@@ -1423,19 +1580,19 @@ index ab0b2465..8f321c8e 100644
  
  install( FILES kdebug.areas kdebugrc DESTINATION ${KDE_INSTALL_CONFDIR} )
 diff --git a/src/kio/dummyanalyzers/CMakeLists.txt b/src/kio/dummyanalyzers/CMakeLists.txt
-index 49673277..ccc9c23d 100644
+index 49673277..f88a2e30 100644
 --- a/src/kio/dummyanalyzers/CMakeLists.txt
 +++ b/src/kio/dummyanalyzers/CMakeLists.txt
 @@ -1,6 +1,6 @@
  
  # build the analyzer as a module
 -add_library(dummy MODULE dummyanalyzers.cpp)
-+add_library(dummy STATIC dummyanalyzers.cpp)
++add_library(dummy ${MODULE} dummyanalyzers.cpp)
  
  # link with the required libraries
  target_link_libraries(dummy ${STRIGI_STREAMANALYZER_LIBRARY})
 diff --git a/src/kioslave/metainfo/CMakeLists.txt b/src/kioslave/metainfo/CMakeLists.txt
-index 1538fc8e..ec7ea98d 100644
+index 1538fc8e..73599827 100644
 --- a/src/kioslave/metainfo/CMakeLists.txt
 +++ b/src/kioslave/metainfo/CMakeLists.txt
 @@ -6,7 +6,7 @@ project(kioslave-metainfo)
@@ -1443,12 +1600,12 @@ index 1538fc8e..ec7ea98d 100644
  
  
 -add_library(kio_metainfo MODULE ${kio_metainfo_PART_SRCS})
-+add_library(kio_metainfo STATIC ${kio_metainfo_PART_SRCS})
++add_library(kio_metainfo ${MODULE} ${kio_metainfo_PART_SRCS})
  
  
  target_link_libraries(kio_metainfo
 diff --git a/src/kssl/kcm/CMakeLists.txt b/src/kssl/kcm/CMakeLists.txt
-index 3a20724c..f7f1f27d 100644
+index 3a20724c..399c1de1 100644
 --- a/src/kssl/kcm/CMakeLists.txt
 +++ b/src/kssl/kcm/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(kcmssl_SRCS kcmssl.cpp cacertificatespage.cpp displaycertdialog.cpp)
@@ -1456,12 +1613,12 @@ index 3a20724c..f7f1f27d 100644
  ki18n_wrap_ui(kcmssl_SRCS cacertificates.ui displaycert.ui)
  
 -add_library(kcm_ssl MODULE ${kcmssl_SRCS})
-+add_library(kcm_ssl STATIC ${kcmssl_SRCS})
++add_library(kcm_ssl ${MODULE} ${kcmssl_SRCS})
  target_link_libraries(kcm_ssl
     Qt5::Network
     KF5::KIOCore
 diff --git a/src/solid-networkstatus/kded/CMakeLists.txt b/src/solid-networkstatus/kded/CMakeLists.txt
-index 9fa30651..2dce112b 100644
+index 9fa30651..042388a6 100644
 --- a/src/solid-networkstatus/kded/CMakeLists.txt
 +++ b/src/solid-networkstatus/kded/CMakeLists.txt
 @@ -54,7 +54,7 @@ qt5_add_dbus_adaptor(kded_networkstatus_PART_SRCS
@@ -1469,7 +1626,7 @@ index 9fa30651..2dce112b 100644
  
  
 -add_library(kded_networkstatus MODULE ${kded_networkstatus_PART_SRCS})
-+add_library(kded_networkstatus STATIC ${kded_networkstatus_PART_SRCS})
++add_library(kded_networkstatus ${MODULE} ${kded_networkstatus_PART_SRCS})
  set_target_properties(kded_networkstatus PROPERTIES
      OUTPUT_NAME networkstatus
  )
@@ -1495,38 +1652,38 @@ echo ./source/frameworks/plasma-framework
 git -C ./source/frameworks/plasma-framework checkout .
 patch -p1 -d ./source/frameworks/plasma-framework <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 1edcd913f..3c30bad57 100644
+index c2b735fef..37a47f447 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -43,7 +43,7 @@ endif()
- 
+@@ -44,6 +44,9 @@ endif()
  set (REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Quick Gui Sql Qml Svg QuickControls2)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Quick Gui Sql Qml Svg QuickControls2 Concurrent PrintSupport TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Quick Gui Sql Qml Svg QuickControls2)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Concurrent PrintSupport TextToSpeech)
++endif()
  
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
      COMPONENTS
-@@ -65,11 +65,17 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
-         Notifications
-         Package
-         Kirigami2
-+        Attica
-+        TextWidgets
-     OPTIONAL_COMPONENTS
+@@ -69,6 +72,16 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
          Wayland
          DocTools
  )
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
++        COMPONENTS
++            Attica
++            TextWidgets
++            Phonon4Qt5
++            Wayland
++            KF5Crash
++    )
++endif()
  
-+find_package(Phonon4Qt5 4.6.60)
-+find_package(Wayland)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
-+
  set_package_properties(KF5Wayland PROPERTIES DESCRIPTION "Integration with the Wayland compositor"
                         TYPE OPTIONAL
-                       )
 diff --git a/KF5PlasmaMacros.cmake b/KF5PlasmaMacros.cmake
-index 494b42d56..a268b1910 100644
+index 494b42d56..504820345 100644
 --- a/KF5PlasmaMacros.cmake
 +++ b/KF5PlasmaMacros.cmake
 @@ -83,7 +83,7 @@ endmacro()
@@ -1534,12 +1691,12 @@ index 494b42d56..a268b1910 100644
      message(WARNING "plasma_add_plugin() is deprecated, use add_library(MODULE) instead. You can use the porting scripts in plasma-framework/tools")
      set(plugin_sources ${ARGN} )
 -    add_library(${plugin} MODULE ${plugin_sources} )
-+    add_library(${plugin} STATIC ${plugin_sources} )
++    add_library(${plugin} ${MODULE} ${plugin_sources} )
      set_target_properties(${plugin} PROPERTIES PREFIX "")
  endmacro()
  
 diff --git a/examples/dataengines/customDataContainers/CMakeLists.txt b/examples/dataengines/customDataContainers/CMakeLists.txt
-index 3ef869093..ff485ac1a 100644
+index 3ef869093..72bb89146 100644
 --- a/examples/dataengines/customDataContainers/CMakeLists.txt
 +++ b/examples/dataengines/customDataContainers/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(customDataContainers_SRCS
@@ -1547,12 +1704,12 @@ index 3ef869093..ff485ac1a 100644
  )
  
 -add_library(plasma_dataengine_example_customDataContainers MODULE ${customDataContainers_SRCS})
-+add_library(plasma_dataengine_example_customDataContainers STATIC ${customDataContainers_SRCS})
++add_library(plasma_dataengine_example_customDataContainers ${MODULE} ${customDataContainers_SRCS})
  
  kcoreaddons_desktop_to_json(plasma_dataengine_example_customDataContainers plasma-dataengine-example-customDataContainers.desktop)
  
 diff --git a/examples/dataengines/simpleEngine/CMakeLists.txt b/examples/dataengines/simpleEngine/CMakeLists.txt
-index 13fdf8e07..068c27c42 100644
+index 13fdf8e07..6262caedf 100644
 --- a/examples/dataengines/simpleEngine/CMakeLists.txt
 +++ b/examples/dataengines/simpleEngine/CMakeLists.txt
 @@ -2,7 +2,7 @@ set(simpleEngine_SRCS
@@ -1560,12 +1717,12 @@ index 13fdf8e07..068c27c42 100644
  )
  
 -add_library(plasma_dataengine_example_simpleEngine MODULE ${simpleEngine_SRCS})
-+add_library(plasma_dataengine_example_simpleEngine STATIC ${simpleEngine_SRCS})
++add_library(plasma_dataengine_example_simpleEngine ${MODULE} ${simpleEngine_SRCS})
  
  kcoreaddons_desktop_to_json(plasma_dataengine_example_simpleEngine plasma-dataengine-example-simpleEngine.desktop)
  
 diff --git a/examples/dataengines/sourcesOnRequest/CMakeLists.txt b/examples/dataengines/sourcesOnRequest/CMakeLists.txt
-index aea248d2c..7a9809d12 100644
+index aea248d2c..36a4397f4 100644
 --- a/examples/dataengines/sourcesOnRequest/CMakeLists.txt
 +++ b/examples/dataengines/sourcesOnRequest/CMakeLists.txt
 @@ -2,7 +2,7 @@ set(sourcesOnRequest_SRCS
@@ -1573,12 +1730,12 @@ index aea248d2c..7a9809d12 100644
  )
  
 -add_library(plasma_dataengine_example_sourcesOnRequest MODULE ${sourcesOnRequest_SRCS})
-+add_library(plasma_dataengine_example_sourcesOnRequest STATIC ${sourcesOnRequest_SRCS})
++add_library(plasma_dataengine_example_sourcesOnRequest ${MODULE} ${sourcesOnRequest_SRCS})
  
  kcoreaddons_desktop_to_json(plasma_dataengine_example_sourcesOnRequest plasma-dataengine-example-sourcesOnRequest.desktop)
  
 diff --git a/examples/testcontainmentactionsplugin/CMakeLists.txt b/examples/testcontainmentactionsplugin/CMakeLists.txt
-index 62d649714..31135b872 100644
+index 62d649714..f3134ca17 100644
 --- a/examples/testcontainmentactionsplugin/CMakeLists.txt
 +++ b/examples/testcontainmentactionsplugin/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(test_SRCS
@@ -1586,7 +1743,7 @@ index 62d649714..31135b872 100644
  ki18n_wrap_ui(test_SRCS config.ui)
  
 -add_library(plasma_containmentactions_test MODULE ${test_SRCS})
-+add_library(plasma_containmentactions_test STATIC ${test_SRCS})
++add_library(plasma_containmentactions_test ${MODULE} ${test_SRCS})
  target_link_libraries(plasma_containmentactions_test KF5::Plasma KF5::I18n KF5::KIOWidgets KF5::XmlGui)
  
  install(TARGETS plasma_containmentactions_test DESTINATION ${KDE_INSTALL_PLUGINDIR})
@@ -1656,13 +1813,13 @@ index 34e7f7ba5..4f925949b 100644
  target_link_libraries(
      platformcomponentsplugin
 diff --git a/src/plasma/packagestructure/CMakeLists.txt b/src/plasma/packagestructure/CMakeLists.txt
-index 9d62638b9..b0d1a3840 100644
+index 9d62638b9..d0fd31f00 100644
 --- a/src/plasma/packagestructure/CMakeLists.txt
 +++ b/src/plasma/packagestructure/CMakeLists.txt
 @@ -1,5 +1,5 @@
  function(install_package_structure name)
 -    add_library(${name}_packagestructure MODULE ${name}package.cpp packages.cpp)
-+    add_library(${name}_packagestructure STATIC ${name}package.cpp packages.cpp)
++    add_library(${name}_packagestructure ${MODULE} ${name}package.cpp packages.cpp)
      target_link_libraries(${name}_packagestructure PRIVATE KF5::Package KF5::Plasma KF5::Declarative KF5::I18n)
      install(TARGETS ${name}_packagestructure DESTINATION ${KDE_INSTALL_PLUGINDIR}/kpackage/packagestructure)
  endfunction()
@@ -1702,7 +1859,7 @@ index d0f1e3c51..07bd4c9de 100644
  target_include_directories(KF5PlasmaQuick PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR};${CMAKE_CURRENT_BINARY_DIR}/..>")
  
 diff --git a/src/scriptengines/qml/CMakeLists.txt b/src/scriptengines/qml/CMakeLists.txt
-index 68499f091..8a7d0cdc5 100644
+index 68499f091..ddc865d48 100644
 --- a/src/scriptengines/qml/CMakeLists.txt
 +++ b/src/scriptengines/qml/CMakeLists.txt
 @@ -15,7 +15,7 @@ set(declarative_appletscript_SRCS
@@ -1710,12 +1867,12 @@ index 68499f091..8a7d0cdc5 100644
      )
  
 -add_library(plasma_appletscript_declarative MODULE ${declarative_appletscript_SRCS} )
-+add_library(plasma_appletscript_declarative STATIC ${declarative_appletscript_SRCS} )
++add_library(plasma_appletscript_declarative ${MODULE} ${declarative_appletscript_SRCS} )
  set_target_properties(plasma_appletscript_declarative PROPERTIES PREFIX "")
  
  kcoreaddons_desktop_to_json(
 diff --git a/templates/cpp-plasmoid/src/CMakeLists.txt b/templates/cpp-plasmoid/src/CMakeLists.txt
-index 548e77732..c47d8a40b 100644
+index 548e77732..a28290af5 100644
 --- a/templates/cpp-plasmoid/src/CMakeLists.txt
 +++ b/templates/cpp-plasmoid/src/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(%{APPNAMELC}_SRCS
@@ -1723,7 +1880,7 @@ index 548e77732..c47d8a40b 100644
  )
  
 -add_library(plasma_applet_%{APPNAMELC} MODULE ${%{APPNAMELC}_SRCS})
-+add_library(plasma_applet_%{APPNAMELC} STATIC ${%{APPNAMELC}_SRCS})
++add_library(plasma_applet_%{APPNAMELC} ${MODULE} ${%{APPNAMELC}_SRCS})
  
  kcoreaddons_desktop_to_json(plasma_applet_%{APPNAMELC} package/metadata.desktop SERVICE_TYPES plasma-applet.desktop)
  
@@ -1741,12 +1898,12 @@ index 46cdf13ab..17342e7dc 100644
  target_link_libraries(%{APPNAMELC}plugin
      KF5::I18n
 diff --git a/tests/testengine/CMakeLists.txt b/tests/testengine/CMakeLists.txt
-index e9b1270ec..65871c1f9 100644
+index e9b1270ec..aa73a2d00 100644
 --- a/tests/testengine/CMakeLists.txt
 +++ b/tests/testengine/CMakeLists.txt
 @@ -1,4 +1,4 @@
 -add_library(plasma_engine_testengine MODULE testengine.cpp)
-+add_library(plasma_engine_testengine STATIC testengine.cpp)
++add_library(plasma_engine_testengine ${MODULE} testengine.cpp)
  
  kcoreaddons_desktop_to_json(
      plasma_engine_testengine plasma-dataengine-testengine.desktop
@@ -1755,7 +1912,7 @@ echo ./source/frameworks/kglobalaccel
 git -C ./source/frameworks/kglobalaccel checkout .
 patch -p1 -d ./source/frameworks/kglobalaccel <<'EOF'
 diff --git a/src/runtime/plugins/xcb/CMakeLists.txt b/src/runtime/plugins/xcb/CMakeLists.txt
-index b76477f..a39f8e7 100644
+index b76477f..0597803 100644
 --- a/src/runtime/plugins/xcb/CMakeLists.txt
 +++ b/src/runtime/plugins/xcb/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(xcb_plugin_SRCS
@@ -1763,7 +1920,7 @@ index b76477f..a39f8e7 100644
  )
  
 -add_library(KF5GlobalAccelPrivateXcb MODULE ${xcb_plugin_SRCS})
-+add_library(KF5GlobalAccelPrivateXcb STATIC ${xcb_plugin_SRCS})
++add_library(KF5GlobalAccelPrivateXcb ${MODULE} ${xcb_plugin_SRCS})
  target_link_libraries(KF5GlobalAccelPrivateXcb
      KF5GlobalAccelPrivate
      XCB::XCB
@@ -1772,28 +1929,34 @@ echo ./source/frameworks/kservice
 git -C ./source/frameworks/kservice checkout .
 patch -p1 -d ./source/frameworks/kservice <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f09f2c2..872f8c6 100644
+index b39106c..497f6cc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -41,7 +41,7 @@ set(APPLICATIONS_MENU_NAME applications.menu
- 
+@@ -42,13 +42,21 @@ set(APPLICATIONS_MENU_NAME applications.menu
  # Dependencies
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Xml)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Xml X11Extras)
- 
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Xml)
+-
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-@@ -49,6 +49,7 @@ find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  find_package(FLEX REQUIRED)
  set_package_properties(FLEX PROPERTIES
 diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
-index b6c3a7b..69e45c2 100644
+index b6c3a7b..dd8b083 100644
 --- a/autotests/CMakeLists.txt
 +++ b/autotests/CMakeLists.txt
 @@ -37,7 +37,7 @@ target_sources(kservicetest PUBLIC
@@ -1801,7 +1964,7 @@ index b6c3a7b..69e45c2 100644
  )
  
 -add_library(fakeplugin MODULE nsaplugin.cpp)
-+add_library(fakeplugin STATIC nsaplugin.cpp)
++add_library(fakeplugin ${MODULE} nsaplugin.cpp)
  ecm_mark_as_test(fakeplugin)
  target_link_libraries(fakeplugin KF5::Service)
  
@@ -1810,7 +1973,7 @@ echo ./source/frameworks/ki18n
 git -C ./source/frameworks/ki18n checkout .
 patch -p1 -d ./source/frameworks/ki18n <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 850aaaa..cda0a5d 100644
+index 850aaaa..f8356e7 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -69,7 +69,7 @@ set(ktranscript_LIB_SRCS
@@ -1818,7 +1981,7 @@ index 850aaaa..cda0a5d 100644
      common_helpers.cpp
  )
 -add_library(ktranscript MODULE ${ktranscript_LIB_SRCS})
-+add_library(ktranscript STATIC ${ktranscript_LIB_SRCS})
++add_library(ktranscript ${MODULE} ${ktranscript_LIB_SRCS})
  generate_export_header(ktranscript BASE_NAME KTranscript)
  target_link_libraries(ktranscript PRIVATE Qt5::Qml Qt5::Core)
  
@@ -1827,31 +1990,41 @@ echo ./source/frameworks/knotifyconfig
 git -C ./source/frameworks/knotifyconfig checkout .
 patch -p1 -d ./source/frameworks/knotifyconfig <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 66c5782..7bc6254 100644
+index bc9d413..8253d0e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -15,7 +15,7 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
- set(REQUIRED_QT_VERSION 5.9.0)
+@@ -16,6 +16,16 @@ set(REQUIRED_QT_VERSION 5.9.0)
  
  # Required Qt5 components to build this framework
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus Concurrent PrintSupport X11Extras Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent PrintSupport Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
++
  find_package(Qt5 ${REQUIRED_QT_VERSION} QUIET OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
    message(STATUS "Qt5TextToSpeech not found, speech features will be disabled")
-@@ -31,6 +31,15 @@ find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
+@@ -31,6 +41,17 @@ find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  # Includes
  
@@ -1877,32 +2050,41 @@ echo ./source/frameworks/kcmutils
 git -C ./source/frameworks/kcmutils checkout .
 patch -p1 -d ./source/frameworks/kcmutils <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index be9c140..07c9fd3 100644
+index ac05c44..125443c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -17,7 +17,7 @@ include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
- include(KDECMakeSettings)
+@@ -18,6 +18,15 @@ include(KDECMakeSettings)
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus Qml Quick QuickWidgets)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus Qml Quick QuickWidgets Svg PrintSupport X11Extras TextToSpeech Concurrent)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus Qml Quick QuickWidgets)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Svg PrintSupport TextToSpeech Concurrent)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  set(KCMUtils_AUTOMOC_MACRO_NAMES "KCMODULECONTAINER")
  if(NOT CMAKE_VERSION VERSION_LESS "3.10.0")
-@@ -48,6 +48,16 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
+@@ -48,6 +57,18 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Declarative ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  add_definitions(-DTRANSLATION_DOMAIN=\"kcmutils5\")
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
@@ -1911,22 +2093,29 @@ echo ./source/frameworks/kdesu
 git -C ./source/frameworks/kdesu checkout .
 patch -p1 -d ./source/frameworks/kdesu <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b96069d..8199c4c 100644
+index 382ee98..f23ac40 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,7 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -14,6 +14,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5Core ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED X11Extras)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -22,6 +23,7 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+@@ -22,6 +28,9 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Pty ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  #optional features
  find_package(X11)
@@ -1960,27 +2149,21 @@ echo ./source/frameworks/kiconthemes
 git -C ./source/frameworks/kiconthemes checkout .
 patch -p1 -d ./source/frameworks/kiconthemes <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 130b040..84da803 100644
+index 4875f60..7bd12eb 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -37,6 +37,7 @@ set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5Widgets ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
- find_package(Qt5Svg ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
- find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-+find_package(Qt5X11Extras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
- 
- find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
- find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
-@@ -44,6 +45,7 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+@@ -44,6 +44,9 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  remove_definitions(-DQT_NO_CAST_FROM_ASCII)
  remove_definitions(-DQT_NO_CAST_FROM_BYTEARRAY)
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 9b042d7..4aeedeb 100644
+index 9b042d7..7781610 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -88,7 +88,7 @@ include(ECMGeneratePriFile)
@@ -1988,27 +2171,24 @@ index 9b042d7..4aeedeb 100644
  install(FILES ${PRI_FILENAME} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
  
 -add_library(KIconEnginePlugin MODULE kiconengineplugin.cpp)
-+add_library(KIconEnginePlugin STATIC kiconengineplugin.cpp)
++add_library(KIconEnginePlugin ${MODULE} kiconengineplugin.cpp)
  
  target_link_libraries(KIconEnginePlugin
      PRIVATE
 diff --git a/src/tools/kiconfinder/kiconfinder.cpp b/src/tools/kiconfinder/kiconfinder.cpp
-index fcd2e22..e286b9b 100644
+index dfa59cc..902557b 100644
 --- a/src/tools/kiconfinder/kiconfinder.cpp
 +++ b/src/tools/kiconfinder/kiconfinder.cpp
-@@ -22,9 +22,12 @@
+@@ -22,8 +22,7 @@
  #include <QCommandLineParser>
  #include <kiconloader.h>
  #include <../kiconthemes_version.h>
+-
+-#include <stdio.h>
 +#include <QtPlugin>
  
- #include <stdio.h>
- 
-+Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
-+
  int main(int argc, char *argv[])
  {
-     QGuiApplication app(argc, argv);
 EOF
 echo ./source/frameworks/solid
 git -C ./source/frameworks/solid checkout .
@@ -2031,70 +2211,87 @@ echo ./source/frameworks/kded
 git -C ./source/frameworks/kded checkout .
 patch -p1 -d ./source/frameworks/kded <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c83112d..73b1762 100644
+index f76e077..9a5fc4e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -12,7 +12,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -13,6 +13,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED DBus Widgets)
-+find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED DBus Widgets X11Extras)
+ find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED DBus Widgets)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
  
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -25,6 +25,8 @@ find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
+@@ -25,7 +31,10 @@ find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
  find_package(KF5Init ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5I18n ${KF5_DEP_VERSION})
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION})
- 
+-
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5I18n ${KF5_DEP_VERSION})
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION})
++endif()
  
  include(CMakePackageConfigHelpers)
+ include(ECMSetupVersion)
 EOF
 echo ./source/frameworks/frameworkintegration
 git -C ./source/frameworks/frameworkintegration checkout .
 patch -p1 -d ./source/frameworks/frameworkintegration <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 1f19262..ff5eaaf 100644
+index e2c34da..da327b6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -23,7 +23,7 @@ include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
- include(KDECMakeSettings)
+@@ -24,7 +24,15 @@ include(KDECMakeSettings)
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets Svg TextToSpeech X11Extras)
- 
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets)
+-
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets Svg TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  ecm_setup_version(PROJECT VARIABLE_PREFIX FRAMEWORKINTEGRATION
-@@ -44,8 +44,14 @@ if (BUILD_KPACKAGE_INSTALL_HANDLERS)
+                   VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/frameworkintegration_version.h"
+@@ -44,8 +52,16 @@ if (BUILD_KPACKAGE_INSTALL_HANDLERS)
     find_package(KF5Package ${KF5_DEP_VERSION} REQUIRED)
     find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  
 -   find_package(packagekitqt5)
 -   find_package(AppStreamQt 0.10.4)
-+   find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+   find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+   find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
-+   find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+   find_package(Phonon4Qt5 4.6.60)
-+
-+#   find_package(packagekitqt5)
-+#   find_package(AppStreamQt 0.10.4)
++    if(NOT BUILD_SHARED_LIBS)
++        find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++        find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++        find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
++        find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++        find_package(Phonon4Qt5 4.6.60)
++    else()
++        find_package(packagekitqt5)
++        find_package(AppStreamQt 0.10.4)
++    endif()
  endif()
  
  add_subdirectory(src)
 diff --git a/src/integrationplugin/CMakeLists.txt b/src/integrationplugin/CMakeLists.txt
-index fc28857..e454fd3 100644
+index fc28857..1ee9454 100644
 --- a/src/integrationplugin/CMakeLists.txt
 +++ b/src/integrationplugin/CMakeLists.txt
 @@ -1,6 +1,6 @@
  
  add_library(FrameworkIntegrationPlugin
 -    MODULE frameworkintegrationplugin.cpp)
-+    STATIC frameworkintegrationplugin.cpp)
++    ${MODULE} frameworkintegrationplugin.cpp)
  
  target_link_libraries(FrameworkIntegrationPlugin
      PRIVATE
@@ -2103,7 +2300,7 @@ echo ./source/frameworks/kwindowsystem
 git -C ./source/frameworks/kwindowsystem checkout .
 patch -p1 -d ./source/frameworks/kwindowsystem <<'EOF'
 diff --git a/src/platforms/wayland/CMakeLists.txt b/src/platforms/wayland/CMakeLists.txt
-index 97b5592..2a7bac3 100644
+index 97b5592..a5d214f 100644
 --- a/src/platforms/wayland/CMakeLists.txt
 +++ b/src/platforms/wayland/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(wayland_plugin_SRCS
@@ -2111,12 +2308,12 @@ index 97b5592..2a7bac3 100644
  )
  
 -add_library(KF5WindowSystemWaylandPlugin MODULE ${wayland_plugin_SRCS})
-+add_library(KF5WindowSystemWaylandPlugin STATIC ${wayland_plugin_SRCS})
++add_library(KF5WindowSystemWaylandPlugin ${MODULE} ${wayland_plugin_SRCS})
  target_link_libraries(KF5WindowSystemWaylandPlugin
      KF5WindowSystem
  )
 diff --git a/src/platforms/xcb/CMakeLists.txt b/src/platforms/xcb/CMakeLists.txt
-index 99fa1ed..4557b16 100644
+index 99fa1ed..abf78c9 100644
 --- a/src/platforms/xcb/CMakeLists.txt
 +++ b/src/platforms/xcb/CMakeLists.txt
 @@ -8,7 +8,7 @@ set(xcb_plugin_SRCS
@@ -2124,7 +2321,7 @@ index 99fa1ed..4557b16 100644
  ecm_qt_declare_logging_category(xcb_plugin_SRCS HEADER kwindowsystem_xcb_debug.h IDENTIFIER LOG_KKEYSERVER_X11 CATEGORY_NAME org.kde.kwindowsystem.keyserver.x11 DEFAULT_SEVERITY Warning)
  
 -add_library(KF5WindowSystemX11Plugin MODULE ${xcb_plugin_SRCS})
-+add_library(KF5WindowSystemX11Plugin STATIC ${xcb_plugin_SRCS})
++add_library(KF5WindowSystemX11Plugin ${MODULE} ${xcb_plugin_SRCS})
  target_link_libraries(KF5WindowSystemX11Plugin
      KF5WindowSystem
      Qt5::X11Extras
@@ -2133,44 +2330,54 @@ echo ./source/frameworks/ktexteditor
 git -C ./source/frameworks/ktexteditor checkout .
 patch -p1 -d ./source/frameworks/ktexteditor <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c01692ab..65b46035 100644
+index fe588b7b..42ccc83e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -42,7 +42,8 @@ set(REQUIRED_QT_VERSION 5.9.0)
- 
+@@ -43,6 +43,15 @@ set(REQUIRED_QT_VERSION 5.9.0)
  # Required Qt5 components to build this framework
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Core Widgets Qml
--  PrintSupport Xml)
-+  PrintSupport Xml
-+  Concurrent X11Extras Svg TextToSpeech)
+   PrintSupport Xml)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent Svg TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
-@@ -53,6 +54,11 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
+@@ -52,7 +61,14 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Sonnet ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
- find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
+-find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  # libgit2 integration, at least 0.22 with proper git_libgit2_init()
  find_package(LibGit2 "0.22.0")
 diff --git a/src/part/CMakeLists.txt b/src/part/CMakeLists.txt
-index d2a3b25a..a9a6ef1e 100644
+index d2a3b25a..d927bba9 100644
 --- a/src/part/CMakeLists.txt
 +++ b/src/part/CMakeLists.txt
 @@ -1,5 +1,5 @@
  # kate part itself just is core + the factory
 -add_library (katepart MODULE katepart.cpp)
-+add_library (katepart STATIC katepart.cpp)
++add_library (katepart ${MODULE} katepart.cpp)
  
  # service => json and install
  kcoreaddons_desktop_to_json (katepart katepart.desktop SERVICE_TYPES kpart.desktop)
 diff --git a/templates/ktexteditor-plugin/src/CMakeLists.txt b/templates/ktexteditor-plugin/src/CMakeLists.txt
-index ed6c1b77..7b2f8351 100644
+index ed6c1b77..47241c70 100644
 --- a/templates/ktexteditor-plugin/src/CMakeLists.txt
 +++ b/templates/ktexteditor-plugin/src/CMakeLists.txt
 @@ -5,7 +5,7 @@ set(%{APPNAMELC}_SRCS
@@ -2178,7 +2385,7 @@ index ed6c1b77..7b2f8351 100644
  )
  
 -add_library(%{APPNAMELC} MODULE ${%{APPNAMELC}_SRCS})
-+add_library(%{APPNAMELC} STATIC ${%{APPNAMELC}_SRCS})
++add_library(%{APPNAMELC} ${MODULE} ${%{APPNAMELC}_SRCS})
  
  target_link_libraries(%{APPNAMELC}
      KF5::TextEditor
@@ -2204,12 +2411,15 @@ echo ./source/frameworks/extra-cmake-modules
 git -C ./source/frameworks/extra-cmake-modules checkout .
 patch -p1 -d ./source/frameworks/extra-cmake-modules <<'EOF'
 diff --git a/attic/modules/SIPMacros.cmake b/attic/modules/SIPMacros.cmake
-index 7c5476e..09e0928 100644
+index 7c5476e..e42cc5e 100644
 --- a/attic/modules/SIPMacros.cmake
 +++ b/attic/modules/SIPMacros.cmake
-@@ -113,7 +113,7 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
+@@ -111,9 +111,9 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
+     )
+     # not sure if type MODULE could be uses anywhere, limit to cygwin for now
      IF (CYGWIN)
-         ADD_LIBRARY(${_logical_name} MODULE ${_sip_output_files} )
+-        ADD_LIBRARY(${_logical_name} MODULE ${_sip_output_files} )
++        ADD_LIBRARY(${_logical_name} ${MODULE} ${_sip_output_files} )
      ELSE (CYGWIN)
 -        ADD_LIBRARY(${_logical_name} SHARED ${_sip_output_files} )
 +        ADD_LIBRARY(${_logical_name} ${_sip_output_files} )
@@ -2217,22 +2427,29 @@ index 7c5476e..09e0928 100644
      TARGET_LINK_LIBRARIES(${_logical_name} ${PYTHON_LIBRARY})
      TARGET_LINK_LIBRARIES(${_logical_name} ${EXTRA_LINK_LIBRARIES})
 diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.cmake
-index 3f7f5a8..0650c81 100644
+index 3f7f5a8..91698c4 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
-@@ -174,6 +174,10 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
+@@ -174,6 +174,17 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
  
  endif()
  
-+# Can't do this at call time because CMake resets it :(
-+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ".so")
-+set(CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDARD_LIBRARIES} ${KDE_STANDARD_LIBRARIES} $ENV{KDE_STANDARD_LIBRARIES})
++############### Static building options ###########################
++
++if(NOT BUILD_SHARED_LIBS)
++    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")   # For GNU compilers, what about MSVC?
++    set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ${KDE_STANDARD_LIBRARIES} $ENV{KDE_STANDARD_LIBRARIES}")
++    set(MODULE "STATIC")
++    add_definitions(-DBUILD_SHARED_LIBS)
++else()
++    set(MODULE "MODULE")
++endif()
 +
  ################ Testing setup ####################################
  
  find_program(APPSTREAMCLI appstreamcli)
 diff --git a/tests/ECMPoQmToolsTest/CMakeLists.txt b/tests/ECMPoQmToolsTest/CMakeLists.txt
-index 2cd76f8..6b29f84 100644
+index 2cd76f8..3496528 100644
 --- a/tests/ECMPoQmToolsTest/CMakeLists.txt
 +++ b/tests/ECMPoQmToolsTest/CMakeLists.txt
 @@ -98,7 +98,7 @@ target_link_libraries(tr_test_2 PRIVATE Qt5::Core)
@@ -2240,7 +2457,7 @@ index 2cd76f8..6b29f84 100644
  # module for tr_thread_test
  #
 -add_library(tr_thread_module MODULE tr_thread_test_module.cpp ${QMLOADER_FILES})
-+add_library(tr_thread_module STATIC tr_thread_test_module.cpp ${QMLOADER_FILES})
++add_library(tr_thread_module ${MODULE} tr_thread_test_module.cpp ${QMLOADER_FILES})
  target_link_libraries(tr_thread_module PRIVATE Qt5::Core)
  
  
@@ -2262,29 +2479,32 @@ echo ./source/frameworks/knotifications
 git -C ./source/frameworks/knotifications checkout .
 patch -p1 -d ./source/frameworks/knotifications <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index aeab2c7..3dbf23c 100644
+index da34e23..e6c11cc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -33,7 +33,7 @@ ecm_setup_version(PROJECT
- # Dependencies
- set(REQUIRED_QT_VERSION 5.9.0)
+@@ -66,11 +66,25 @@ endif()
+ if(APPLE)
+    find_package(Qt5MacExtras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+ endif()
++if(WIN32)
++    find_package(Qt5WinExtras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
++endif()
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Concurrent PrintSupport X11Extras)
- find_package(Qt5 ${REQUIRED_QT_VERSION} QUIET OPTIONAL_COMPONENTS TextToSpeech)
- set_package_properties(Qt5TextToSpeech PROPERTIES
-    DESCRIPTION "Qt text to speech module"
-@@ -64,6 +64,13 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Codecs ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    if(X11_FOUND)
++        find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    endif()
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  find_package(Canberra)
  set_package_properties(Canberra PROPERTIES DESCRIPTION "Library for generating event sounds"
@@ -2293,28 +2513,30 @@ echo ./source/frameworks/kwallet
 git -C ./source/frameworks/kwallet checkout .
 patch -p1 -d ./source/frameworks/kwallet <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2217330..25c6c2a 100644
+index b60d376..7b3e750 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+@@ -14,6 +14,9 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus X11Extras TextToSpeech Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED TextToSpeech Svg WinExtras)
++endif()
  
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -32,7 +32,12 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
- find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
+@@ -33,6 +36,13 @@ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++endif()
 +
-+find_package(Phonon4Qt5 4.6.60 NO_MODULE)
++find_package(Phonon4Qt5 4.6.60 REQUIRED)
  
  add_definitions(-DTRANSLATION_DOMAIN=\"kwalletd5\")
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
@@ -2336,34 +2558,46 @@ echo ./source/frameworks/kmediaplayer
 git -C ./source/frameworks/kmediaplayer checkout .
 patch -p1 -d ./source/frameworks/kmediaplayer <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e91520f..6b4f5f9 100644
+index 52eb6a4..a0b89d2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,6 +13,8 @@ find_package(ECM 5.53.0  NO_MODULE)
+@@ -13,6 +13,10 @@ find_package(ECM 5.54.0  NO_MODULE)
  set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
  feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
  
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
 +
  set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  include(KDEInstallDirs)
-@@ -45,10 +47,17 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
+@@ -45,10 +49,28 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
  find_package(Qt5Widgets ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} COMPONENTS Concurrent PrintSupport TextToSpeech X11Extras Svg)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} COMPONENTS Concurrent PrintSupport TextToSpeech Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
--
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
+ 
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  #
  # Subdirectories
@@ -2372,28 +2606,37 @@ echo ./source/frameworks/kdesignerplugin
 git -C ./source/frameworks/kdesignerplugin checkout .
 patch -p1 -d ./source/frameworks/kdesignerplugin <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c967812..827615e 100644
+index 2349308..00716f8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -24,6 +24,16 @@ set_package_properties(Qt5Designer PROPERTIES
+@@ -24,7 +24,24 @@ set_package_properties(Qt5Designer PROPERTIES
     PURPOSE "Required to build the Qt Designer plugins"
     TYPE OPTIONAL
  )
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
-+find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS X11Extras Svg Concurrent PrintSupport TextToSpeech Sensors Positioning)
- 
+-
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++    find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Svg Concurrent PrintSupport TextToSpeech Sensors Positioning)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  include(ECMPoQmTools)
  
+ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
 diff --git a/KF5DesignerPluginMacros.cmake b/KF5DesignerPluginMacros.cmake
-index b404f66..d3d29fb 100644
+index b404f66..7368cb9 100644
 --- a/KF5DesignerPluginMacros.cmake
 +++ b/KF5DesignerPluginMacros.cmake
 @@ -98,7 +98,7 @@ macro(kf5designerplugin_add_plugin target)
@@ -2401,7 +2644,7 @@ index b404f66..d3d29fb 100644
      endif()
      if(Qt5Designer_FOUND)
 -        add_library(${target} MODULE ${_files})
-+       add_library(${target} STATIC ${_files})
++       add_library(${target} ${MODULE} ${_files})
          target_include_directories(${target}
               PRIVATE ${Qt5UiPlugin_INCLUDE_DIRS}
               PRIVATE ${Qt5Designer_INCLUDE_DIRS}
@@ -2410,7 +2653,7 @@ echo ./source/frameworks/kidletime
 git -C ./source/frameworks/kidletime checkout .
 patch -p1 -d ./source/frameworks/kidletime <<'EOF'
 diff --git a/src/plugins/osx/CMakeLists.txt b/src/plugins/osx/CMakeLists.txt
-index e1b50b8..f9f20bb 100644
+index e1b50b8..a0c664d 100644
 --- a/src/plugins/osx/CMakeLists.txt
 +++ b/src/plugins/osx/CMakeLists.txt
 @@ -2,7 +2,7 @@ set(osx_plugin_SRCS
@@ -2418,12 +2661,12 @@ index e1b50b8..f9f20bb 100644
  )
  
 -add_library(KF5IdleTimeOsxPlugin MODULE ${osx_plugin_SRCS})
-+add_library(KF5IdleTimeOsxPlugin STATIC ${osx_plugin_SRCS})
++add_library(KF5IdleTimeOsxPlugin ${MODULE} ${osx_plugin_SRCS})
  target_link_libraries(KF5IdleTimeOsxPlugin
      KF5IdleTime
      "-framework CoreFoundation -framework Carbon"
 diff --git a/src/plugins/windows/CMakeLists.txt b/src/plugins/windows/CMakeLists.txt
-index 61c9364..ab4ae4c 100644
+index 61c9364..57865c8 100644
 --- a/src/plugins/windows/CMakeLists.txt
 +++ b/src/plugins/windows/CMakeLists.txt
 @@ -2,7 +2,7 @@ set(windows_plugin_SRCS
@@ -2431,12 +2674,12 @@ index 61c9364..ab4ae4c 100644
  )
  
 -add_library(KF5IdleTimeWindowsPlugin MODULE ${windows_plugin_SRCS})
-+add_library(KF5IdleTimeWindowsPlugin STATIC ${windows_plugin_SRCS})
++add_library(KF5IdleTimeWindowsPlugin ${MODULE} ${windows_plugin_SRCS})
  target_link_libraries(KF5IdleTimeWindowsPlugin
      KF5IdleTime
  )
 diff --git a/src/plugins/xscreensaver/CMakeLists.txt b/src/plugins/xscreensaver/CMakeLists.txt
-index 6842a03..8ca1317 100644
+index 6842a03..9e1cbc5 100644
 --- a/src/plugins/xscreensaver/CMakeLists.txt
 +++ b/src/plugins/xscreensaver/CMakeLists.txt
 @@ -4,7 +4,7 @@ set(xscreensaver_plugin_SRCS
@@ -2444,12 +2687,12 @@ index 6842a03..8ca1317 100644
  qt5_add_dbus_interface(xscreensaver_plugin_SRCS org.freedesktop.ScreenSaver.xml screensaver_interface)
  
 -add_library(KF5IdleTimeXcbPlugin1 MODULE ${xscreensaver_plugin_SRCS})
-+add_library(KF5IdleTimeXcbPlugin1 STATIC ${xscreensaver_plugin_SRCS})
++add_library(KF5IdleTimeXcbPlugin1 ${MODULE} ${xscreensaver_plugin_SRCS})
  target_link_libraries(KF5IdleTimeXcbPlugin1
      KF5IdleTime
      Qt5::DBus
 diff --git a/src/plugins/xsync/CMakeLists.txt b/src/plugins/xsync/CMakeLists.txt
-index d31feb5..3eaefd1 100644
+index d31feb5..23ccc54 100644
 --- a/src/plugins/xsync/CMakeLists.txt
 +++ b/src/plugins/xsync/CMakeLists.txt
 @@ -7,7 +7,7 @@ set(xsync_plugin_SRCS
@@ -2457,7 +2700,7 @@ index d31feb5..3eaefd1 100644
  ecm_qt_declare_logging_category(xsync_plugin_SRCS HEADER xsync_logging.h IDENTIFIER KIDLETIME_XSYNC_PLUGIN CATEGORY_NAME org.kde.kf5.idletime.xsync)
  
 -add_library(KF5IdleTimeXcbPlugin0 MODULE ${xsync_plugin_SRCS})
-+add_library(KF5IdleTimeXcbPlugin0 STATIC ${xsync_plugin_SRCS})
++add_library(KF5IdleTimeXcbPlugin0 ${MODULE} ${xsync_plugin_SRCS})
  target_link_libraries(KF5IdleTimeXcbPlugin0
      KF5IdleTime
      Qt5::X11Extras
@@ -2466,33 +2709,50 @@ echo ./source/frameworks/kio
 git -C ./source/frameworks/kio checkout .
 patch -p1 -d ./source/frameworks/kio <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 73b0f8c2..b3ee1fff 100644
+index 0e8c7ded..a2285051 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -49,6 +49,12 @@ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
+@@ -49,6 +49,13 @@ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
  find_package(KF5Solid ${KF5_DEP_VERSION} REQUIRED) # for kio_trash
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(Phonon4Qt5 REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(Phonon4Qt5 REQUIRED)
++endif()
  
  if (NOT KIOCORE_ONLY)
  find_package(KF5Bookmarks ${KF5_DEP_VERSION} REQUIRED)
-@@ -72,7 +78,7 @@ set_package_properties(KF5DocTools PROPERTIES DESCRIPTION "Provides tools to gen
-                       )
+@@ -73,6 +80,9 @@ set_package_properties(KF5DocTools PROPERTIES DESCRIPTION "Provides tools to gen
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Network Concurrent Xml Test)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Network Concurrent Xml Test Svg PrintSupport TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Network Concurrent Xml Test)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg PrintSupport TextToSpeech)
++endif()
  
  find_package(GSSAPI)
  set_package_properties(GSSAPI PROPERTIES DESCRIPTION "Allows KIO to make use of certain HTTP authentication services"
+@@ -86,9 +96,12 @@ if (NOT APPLE AND NOT WIN32)
+ endif()
+ 
+ set(HAVE_X11 ${X11_FOUND})
+-if (HAVE_X11)
++if (X11_FOUND)
+     find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+-endif()
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
+ 
+ add_definitions(-DTRANSLATION_DOMAIN=\"kio5\")
+ if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
 diff --git a/src/ioslaves/file/CMakeLists.txt b/src/ioslaves/file/CMakeLists.txt
-index 9ab8ea32..a2ea9f46 100644
+index 9ab8ea32..f3ffba95 100644
 --- a/src/ioslaves/file/CMakeLists.txt
 +++ b/src/ioslaves/file/CMakeLists.txt
 @@ -22,7 +22,7 @@ check_include_files(sys/xattr.h HAVE_SYS_XATTR_H)
@@ -2500,12 +2760,12 @@ index 9ab8ea32..a2ea9f46 100644
  configure_file(config-kioslave-file.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-kioslave-file.h )
  
 -add_library(kio_file MODULE ${kio_file_PART_SRCS})
-+add_library(kio_file STATIC ${kio_file_PART_SRCS})
++add_library(kio_file ${MODULE} ${kio_file_PART_SRCS})
  target_link_libraries(kio_file KF5::KIOCore KF5::I18n Qt5::DBus Qt5::Network)
  
  if(UNIX)
 diff --git a/src/ioslaves/ftp/CMakeLists.txt b/src/ioslaves/ftp/CMakeLists.txt
-index 8743a30f..abecdb04 100644
+index 8743a30f..eedd29aa 100644
 --- a/src/ioslaves/ftp/CMakeLists.txt
 +++ b/src/ioslaves/ftp/CMakeLists.txt
 @@ -13,7 +13,7 @@ ftp.cpp
@@ -2513,12 +2773,12 @@ index 8743a30f..abecdb04 100644
  
  
 -add_library(kio_ftp MODULE ${kio_ftp_PART_SRCS})
-+add_library(kio_ftp STATIC ${kio_ftp_PART_SRCS})
++add_library(kio_ftp ${MODULE} ${kio_ftp_PART_SRCS})
  target_link_libraries(kio_ftp Qt5::Network KF5::KIOCore KF5::I18n)
  
  set_target_properties(kio_ftp PROPERTIES OUTPUT_NAME "ftp")
 diff --git a/src/ioslaves/help/CMakeLists.txt b/src/ioslaves/help/CMakeLists.txt
-index 998a3cf5..f5a9a142 100644
+index 998a3cf5..624713a2 100644
 --- a/src/ioslaves/help/CMakeLists.txt
 +++ b/src/ioslaves/help/CMakeLists.txt
 @@ -40,7 +40,7 @@ set(kio_help_PART_SRCS
@@ -2526,7 +2786,7 @@ index 998a3cf5..f5a9a142 100644
  
  
 -add_library(kio_help MODULE ${kio_help_PART_SRCS})
-+add_library(kio_help STATIC ${kio_help_PART_SRCS})
++add_library(kio_help ${MODULE} ${kio_help_PART_SRCS})
  
  target_link_libraries(kio_help
     Qt5::Gui # QTextDocument
@@ -2535,12 +2795,12 @@ index 998a3cf5..f5a9a142 100644
  
  
 -add_library(kio_ghelp MODULE ${kio_ghelp_PART_SRCS})
-+add_library(kio_ghelp STATIC ${kio_ghelp_PART_SRCS})
++add_library(kio_ghelp ${MODULE} ${kio_ghelp_PART_SRCS})
  
  target_link_libraries(kio_ghelp
     Qt5::Gui # QTextDocument
 diff --git a/src/ioslaves/http/CMakeLists.txt b/src/ioslaves/http/CMakeLists.txt
-index acfbb744..f32b89a0 100644
+index acfbb744..dd0c6e59 100644
 --- a/src/ioslaves/http/CMakeLists.txt
 +++ b/src/ioslaves/http/CMakeLists.txt
 @@ -63,7 +63,7 @@ set(kio_http_PART_SRCS
@@ -2548,22 +2808,22 @@ index acfbb744..f32b89a0 100644
  
  
 -add_library(kio_http MODULE ${kio_http_PART_SRCS})
-+add_library(kio_http STATIC ${kio_http_PART_SRCS})
++add_library(kio_http ${MODULE} ${kio_http_PART_SRCS})
  
  target_link_libraries(kio_http
     Qt5::DBus
 diff --git a/src/ioslaves/remote/kdedmodule/CMakeLists.txt b/src/ioslaves/remote/kdedmodule/CMakeLists.txt
-index 4e40d214..1eb2b2c8 100644
+index 4e40d214..1ef12f08 100644
 --- a/src/ioslaves/remote/kdedmodule/CMakeLists.txt
 +++ b/src/ioslaves/remote/kdedmodule/CMakeLists.txt
 @@ -1,4 +1,4 @@
 -add_library(remotedirnotify MODULE remotedirnotify.cpp remotedirnotifymodule.cpp ../debug.cpp)
-+add_library(remotedirnotify STATIC remotedirnotify.cpp remotedirnotifymodule.cpp ../debug.cpp)
++add_library(remotedirnotify ${MODULE} remotedirnotify.cpp remotedirnotifymodule.cpp ../debug.cpp)
  kcoreaddons_desktop_to_json(remotedirnotify remotedirnotify.desktop)
  
  target_link_libraries(remotedirnotify KF5::DBusAddons KF5::KIOCore)
 diff --git a/src/ioslaves/trash/CMakeLists.txt b/src/ioslaves/trash/CMakeLists.txt
-index 549c4baa..852620c6 100644
+index 549c4baa..fb1f22cd 100644
 --- a/src/ioslaves/trash/CMakeLists.txt
 +++ b/src/ioslaves/trash/CMakeLists.txt
 @@ -30,7 +30,7 @@ else()
@@ -2571,7 +2831,7 @@ index 549c4baa..852620c6 100644
    set(kio_trash_PART_SRCS kio_trash.cpp ${trashcommon_unix_SRCS} ${kio_trash_PART_DEBUG_SRCS})
  endif()
 -add_library(kio_trash MODULE ${kio_trash_PART_SRCS})
-+add_library(kio_trash STATIC ${kio_trash_PART_SRCS})
++add_library(kio_trash ${MODULE} ${kio_trash_PART_SRCS})
  
  target_link_libraries(kio_trash
    KF5::Solid
@@ -2580,12 +2840,12 @@ index 549c4baa..852620c6 100644
  if(NOT WIN32 AND NOT KIOCORE_ONLY)
      set(kcm_trash_PART_SRCS kcmtrash.cpp ${trashcommon_unix_SRCS} ${kio_trash_PART_DEBUG_SRCS})
 -    add_library(kcm_trash MODULE ${kcm_trash_PART_SRCS})
-+    add_library(kcm_trash STATIC ${kcm_trash_PART_SRCS})
++    add_library(kcm_trash ${MODULE} ${kcm_trash_PART_SRCS})
      target_link_libraries(kcm_trash
         Qt5::DBus
         KF5::I18n
 diff --git a/src/kcms/kio/CMakeLists.txt b/src/kcms/kio/CMakeLists.txt
-index 3bb827fd..ea052539 100644
+index 3bb827fd..4e3bf764 100644
 --- a/src/kcms/kio/CMakeLists.txt
 +++ b/src/kcms/kio/CMakeLists.txt
 @@ -29,7 +29,7 @@ ki18n_wrap_ui(kcm_kio_PART_SRCS
@@ -2593,24 +2853,24 @@ index 3bb827fd..ea052539 100644
      kcookiespolicyselectiondlg.ui)
  
 -add_library(kcm_kio MODULE ${kcm_kio_PART_SRCS})
-+add_library(kcm_kio STATIC ${kcm_kio_PART_SRCS})
++add_library(kcm_kio ${MODULE} ${kcm_kio_PART_SRCS})
  
  target_link_libraries(kcm_kio
    PUBLIC
 diff --git a/src/kcms/webshortcuts/CMakeLists.txt b/src/kcms/webshortcuts/CMakeLists.txt
-index e00c3254..96e16475 100644
+index e00c3254..1e03c045 100644
 --- a/src/kcms/webshortcuts/CMakeLists.txt
 +++ b/src/kcms/webshortcuts/CMakeLists.txt
 @@ -1,6 +1,6 @@
  set(kcm_webshortcuts_PART_SRCS main.cpp )
  
 -add_library(kcm_webshortcuts MODULE ${kcm_webshortcuts_PART_SRCS})
-+add_library(kcm_webshortcuts STATIC ${kcm_webshortcuts_PART_SRCS})
++add_library(kcm_webshortcuts ${MODULE} ${kcm_webshortcuts_PART_SRCS})
  
  target_link_libraries(kcm_webshortcuts
    PUBLIC
 diff --git a/src/kssld/kssld_adaptor.h b/src/kssld/kssld_adaptor.h
-index 337eb362..8faaa1c4 100644
+index 337eb362..206a1bf0 100644
 --- a/src/kssld/kssld_adaptor.h
 +++ b/src/kssld/kssld_adaptor.h
 @@ -27,7 +27,7 @@
@@ -2618,7 +2878,7 @@ index 337eb362..8faaa1c4 100644
  #include <QDBusArgument>
  
 -#include "kssld_dbusmetatypes.h"
-+// #include "kssld_dbusmetatypes.h"
++// #include "kssld_dbusmetatypes.h" ?????
  
  class KSSLDAdaptor: public QDBusAbstractAdaptor
  {
@@ -2627,7 +2887,7 @@ index 337eb362..8faaa1c4 100644
      {
          Q_ASSERT(parent);
 -        registerMetaTypesForKSSLD();
-+//         registerMetaTypesForKSSLD();
++//         registerMetaTypesForKSSLD(); ?????
      }
  
  private:
@@ -2636,32 +2896,41 @@ echo ./source/frameworks/baloo
 git -C ./source/frameworks/baloo checkout .
 patch -p1 -d ./source/frameworks/baloo <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2f4681f2..11d1453a 100644
+index 41dab7fb..b1bc88a6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -55,8 +55,8 @@ add_feature_info(EXP ${BUILD_EXPERIMENTAL} "Build experimental features")
- 
- 
+@@ -57,6 +57,16 @@ add_feature_info(EXP ${BUILD_EXPERIMENTAL} "Build experimental features")
  # set up build dependencies
--find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test)
--find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test X11Extras Svg)
-+find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO WindowSystem IconThemes GuiAddons Archive)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test)
+ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS WindowSystem IconThemes GuiAddons Archive)
++endif()
  
  find_package(LMDB)
  set_package_properties(LMDB
 diff --git a/src/codecs/CMakeLists.txt b/src/codecs/CMakeLists.txt
-index 9df77969..1e835129 100644
+index 9df77969..1d5b56b3 100644
 --- a/src/codecs/CMakeLists.txt
 +++ b/src/codecs/CMakeLists.txt
-@@ -13,3 +13,5 @@ target_link_libraries(KF5BalooCodecs
+@@ -13,3 +13,7 @@ target_link_libraries(KF5BalooCodecs
      Qt5::Core
      KF5::CoreAddons
  )
 +
-+install(TARGETS KF5BalooCodecs EXPORT KF5BalooTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
++if(NOT BUILD_SHARED_LIBS)
++    install(TARGETS KF5BalooCodecs EXPORT KF5BalooTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS} LIBRARY NAMELINK_SKIP)
++endif()
+\ No newline at end of file
 diff --git a/src/kioslaves/kded/CMakeLists.txt b/src/kioslaves/kded/CMakeLists.txt
-index 804c9442..3299787c 100644
+index 804c9442..40eb4199 100644
 --- a/src/kioslaves/kded/CMakeLists.txt
 +++ b/src/kioslaves/kded/CMakeLists.txt
 @@ -2,7 +2,7 @@ set (KDED_BALOOSEARCH_SRCS
@@ -2669,24 +2938,24 @@ index 804c9442..3299787c 100644
  )
  
 -add_library(baloosearchmodule MODULE ${KDED_BALOOSEARCH_SRCS})
-+add_library(baloosearchmodule STATIC ${KDED_BALOOSEARCH_SRCS})
++add_library(baloosearchmodule ${MODULE} ${KDED_BALOOSEARCH_SRCS})
  kcoreaddons_desktop_to_json(baloosearchmodule baloosearchmodule.desktop)
  
  target_link_libraries(baloosearchmodule
 diff --git a/src/kioslaves/search/CMakeLists.txt b/src/kioslaves/search/CMakeLists.txt
-index 399ed740..810a03ed 100644
+index 399ed740..312e8343 100644
 --- a/src/kioslaves/search/CMakeLists.txt
 +++ b/src/kioslaves/search/CMakeLists.txt
 @@ -1,6 +1,6 @@
  add_definitions(-DTRANSLATION_DOMAIN=\"kio5_baloosearch\")
  
 -add_library(kio_baloosearch MODULE kio_search.cpp)
-+add_library(kio_baloosearch STATIC kio_search.cpp)
++add_library(kio_baloosearch ${MODULE} kio_search.cpp)
  
  target_link_libraries(kio_baloosearch
    KF5::KIOCore
 diff --git a/src/kioslaves/tags/CMakeLists.txt b/src/kioslaves/tags/CMakeLists.txt
-index 496b9f4d..ec03fcbc 100644
+index 496b9f4d..4feed3d9 100644
 --- a/src/kioslaves/tags/CMakeLists.txt
 +++ b/src/kioslaves/tags/CMakeLists.txt
 @@ -11,7 +11,7 @@ ecm_qt_declare_logging_category(tags_LIB_SRCS
@@ -2694,12 +2963,12 @@ index 496b9f4d..ec03fcbc 100644
  )
  
 -add_library(tags MODULE ${tags_LIB_SRCS})
-+add_library(tags STATIC ${tags_LIB_SRCS})
++add_library(tags ${MODULE} ${tags_LIB_SRCS})
  
  target_link_libraries(tags
    KF5::KIOWidgets
 diff --git a/src/kioslaves/timeline/CMakeLists.txt b/src/kioslaves/timeline/CMakeLists.txt
-index bc3e8ca2..8336d021 100644
+index bc3e8ca2..a26cd8f3 100644
 --- a/src/kioslaves/timeline/CMakeLists.txt
 +++ b/src/kioslaves/timeline/CMakeLists.txt
 @@ -12,7 +12,7 @@ ecm_qt_declare_logging_category(kio_timeline_SRCS
@@ -2707,7 +2976,7 @@ index bc3e8ca2..8336d021 100644
  )
  
 -add_library(timeline MODULE ${kio_timeline_SRCS})
-+add_library(timeline STATIC ${kio_timeline_SRCS})
++add_library(timeline ${MODULE} ${kio_timeline_SRCS})
  
  target_link_libraries(timeline
    KF5::KIOWidgets
@@ -2742,30 +3011,40 @@ echo ./source/frameworks/kdewebkit
 git -C ./source/frameworks/kdewebkit checkout .
 patch -p1 -d ./source/frameworks/kdewebkit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3c759b1..8d52242 100644
+index 0ac9553..f44d3e2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -14,6 +14,16 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets WebKitWidgets Network)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets WebKitWidgets Network Concurrent X11Extras PrintSupport TextToSpeech Svg Sensors Positioning)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets WebKitWidgets Network)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent PrintSupport TextToSpeech Svg Sensors Positioning)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
++
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -36,6 +36,14 @@ find_package(KF5JobWidgets ${KF5_DEP_VERSION} REQUIRED)
+@@ -36,6 +46,16 @@ find_package(KF5JobWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  remove_definitions(-DQT_NO_CAST_FROM_ASCII)
  remove_definitions(-DQT_NO_CAST_FROM_BYTEARRAY)
@@ -2774,7 +3053,7 @@ echo ./source/frameworks/bluez-qt
 git -C ./source/frameworks/bluez-qt checkout .
 patch -p1 -d ./source/frameworks/bluez-qt <<'EOF'
 diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
-index 888978f..1b6e17c 100644
+index 888978f..28294ea 100644
 --- a/autotests/CMakeLists.txt
 +++ b/autotests/CMakeLists.txt
 @@ -36,6 +36,6 @@ bluezqt_tests(
@@ -2782,7 +3061,7 @@ index 888978f..1b6e17c 100644
  if(Qt5Qml_FOUND AND Qt5QuickTest_FOUND)
      bluezqt_tests(qmltests)
 -    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest)
-+    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest -lQt5Quick -lQt5QmlDebug -lQt5Qml)
++    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest Qt5::Quick Qt5::QmlDebug)
      add_definitions(-DBLUEZQT_QML_IMPORT_PATH="${CMAKE_CURRENT_BINARY_DIR}/../src/imports")
  endif()
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
@@ -2803,7 +3082,7 @@ echo ./source/frameworks/kdoctools
 git -C ./source/frameworks/kdoctools checkout .
 patch -p1 -d ./source/frameworks/kdoctools <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 24f75a4..898523a 100644
+index 24f75a4..68c88ef 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -34,7 +34,7 @@ ecm_qt_declare_logging_category(kdoctoolslog_core_SRCS
@@ -2815,12 +3094,16 @@ index 24f75a4..898523a 100644
  generate_export_header(KF5DocTools BASE_NAME KDocTools EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/kdoctools_export.h")
  add_library(KF5::DocTools ALIAS KF5DocTools)
  if (NOT MEINPROC_NO_KARCHIVE)
-@@ -101,7 +101,7 @@ if(MEINPROC_NO_KARCHIVE)
+@@ -101,7 +101,11 @@ if(MEINPROC_NO_KARCHIVE)
      add_definitions(-DMEINPROC_NO_KARCHIVE) #we don't have saveToCache when compiling without KArchive, which is used in xslt_kde.cpp
  else ()
      set(meinproc_additional_SRCS xslt_kde.cpp)
 -    set(meinproc_additional_LIBS KF5::Archive)
-+    set(meinproc_additional_LIBS KF5::Archive libxml2.a libgcrypt.a libgpg-error.a)
++    if(BUILD_SHARED_LIBS)
++        set(meinproc_additional_LIBS KF5::Archive)
++    else()
++        set(meinproc_additional_LIBS KF5::Archive libxml2.a libgcrypt.a libgpg-error.a)
++    endif()
  endif()
  
  add_executable(meinproc5 meinproc.cpp meinproc_common.cpp xslt.cpp ${meinproc_additional_SRCS} ${kdoctoolslog_core_SRCS})
@@ -2829,44 +3112,57 @@ echo ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
 patch -p1 -d ./source/frameworks/kxmlgui <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 98efa69..e52ef51 100644
+index 6b2579a..2c054f3 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -36,7 +36,7 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
- 
+@@ -37,6 +37,15 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
  # Dependencies
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Xml Network PrintSupport)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Xml Network PrintSupport X11Extras Svg TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Xml Network PrintSupport)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
-@@ -47,6 +47,11 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
+@@ -47,7 +56,14 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSIqON} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
- find_package(KF5Attica ${KF5_DEP_VERSION})
+-find_package(KF5Attica ${KF5_DEP_VERSION})
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSIqON} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION})
++endif()
  set_package_properties(KF5Attica PROPERTIES DESCRIPTION "A Qt library that implements the Open Collaboration Services API"
                         PURPOSE "Support for Get Hot New Stuff in KXMLGUI"
+                        URL "https://projects.kde.org/attica"
 EOF
 echo ./source/frameworks/kconfigwidgets
 git -C ./source/frameworks/kconfigwidgets checkout .
 patch -p1 -d ./source/frameworks/kconfigwidgets <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index a35cf3c..e75aaa4 100644
+index a35cf3c..aadd3cd 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -17,6 +17,8 @@ ecm_qt_declare_logging_category(kconfigwidgets_SRCS HEADER kconfigwidgets_debug.
+@@ -17,6 +17,10 @@ ecm_qt_declare_logging_category(kconfigwidgets_SRCS HEADER kconfigwidgets_debug.
  
  qt5_add_resources(kconfigwidgets_SRCS kconfigwidgets.qrc)
  
-+add_library(Qt5X11Extras)
-+add_library(Qt5::X11Extras ALIAS Qt5X11Extras)
++if (X11_FOUND)
++    add_library(Qt5X11Extras)
++    add_library(Qt5::X11Extras ALIAS Qt5X11Extras)
++endif ()
  add_library(KF5ConfigWidgets ${kconfigwidgets_SRCS})
  generate_export_header(KF5ConfigWidgets BASE_NAME KConfigWidgets)
  add_library(KF5::ConfigWidgets ALIAS KF5ConfigWidgets)
@@ -2875,33 +3171,44 @@ echo ./source/frameworks/kbookmarks
 git -C ./source/frameworks/kbookmarks checkout .
 patch -p1 -d ./source/frameworks/kbookmarks <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index df09ade..f0c9514 100644
+index 2d51e38..8e1314e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -38,7 +38,7 @@ ecm_setup_version(PROJECT
- # Dependencies
+@@ -39,6 +39,15 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets Xml DBus)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets Xml DBus Network PrintSupport Svg X11Extras TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets Xml DBus)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Network PrintSupport Svg TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-@@ -47,6 +47,17 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
+@@ -47,6 +56,21 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    if (X11_FOUND)
++        find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    endif()
++    find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
      ecm_install_po_files_as_qm(po)
@@ -2910,29 +3217,35 @@ echo ./source/frameworks/kemoticons
 git -C ./source/frameworks/kemoticons checkout .
 patch -p1 -d ./source/frameworks/kemoticons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9765e23..cfcfb4f 100644
+index e10e741..c96edeb 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+@@ -14,6 +14,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui DBus)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui DBus X11Extras)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui DBus)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
  
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -39,6 +39,8 @@ find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
+@@ -39,6 +45,10 @@ find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5I18n ${KF5_DEP_VERSION})
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION})
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5I18n ${KF5_DEP_VERSION})
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION})
++endif()
  
  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kemoticons_version.h
          DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF5} COMPONENT Devel )
 diff --git a/src/integrationplugin/CMakeLists.txt b/src/integrationplugin/CMakeLists.txt
-index d12c36f..ce66b42 100644
+index d12c36f..e4cc21d 100644
 --- a/src/integrationplugin/CMakeLists.txt
 +++ b/src/integrationplugin/CMakeLists.txt
 @@ -3,7 +3,7 @@ set(KEmoticonsIntegrationPlugin_SRCS
@@ -2940,7 +3253,7 @@ index d12c36f..ce66b42 100644
  )
  
 -add_library(KEmoticonsIntegrationPlugin MODULE ${KEmoticonsIntegrationPlugin_SRCS})
-+add_library(KEmoticonsIntegrationPlugin STATIC ${KEmoticonsIntegrationPlugin_SRCS})
++add_library(KEmoticonsIntegrationPlugin ${MODULE} ${KEmoticonsIntegrationPlugin_SRCS})
  
  target_link_libraries(KEmoticonsIntegrationPlugin
      PRIVATE
@@ -2949,15 +3262,19 @@ echo ./source/frameworks/kcrash
 git -C ./source/frameworks/kcrash checkout .
 patch -p1 -d ./source/frameworks/kcrash <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6af50e4..06a185e 100644
+index f13c283..296f069 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -12,7 +12,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -13,6 +13,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core X11Extras)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
@@ -2966,23 +3283,26 @@ echo ./source/frameworks/qqc2-desktop-style
 git -C ./source/frameworks/qqc2-desktop-style checkout .
 patch -p1 -d ./source/frameworks/qqc2-desktop-style <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c9697df..0163b60 100644
+index 602d94a..d3f0b63 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -32,9 +32,9 @@ include(KDEInstallDirs)
- include(KDECMakeSettings)
+@@ -33,8 +33,14 @@ include(KDECMakeSettings)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core Quick Gui Widgets QuickControls2)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core Quick Gui Widgets QuickControls2 DBus Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core Quick Gui Widgets QuickControls2)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS DBus Svg)
++endif()
  
--find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Kirigami2)
-+find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Kirigami2 Archive GuiAddons I18n ItemViews)
+ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Kirigami2)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Archive GuiAddons I18n ItemViews)
++endi()
  
  find_package(KF5 ${KF5_DEP_VERSION} COMPONENTS
                  IconThemes #KIconLoader
 diff --git a/kirigami-plasmadesktop-integration/CMakeLists.txt b/kirigami-plasmadesktop-integration/CMakeLists.txt
-index b977752..d709ed5 100644
+index b977752..9df8d63 100644
 --- a/kirigami-plasmadesktop-integration/CMakeLists.txt
 +++ b/kirigami-plasmadesktop-integration/CMakeLists.txt
 @@ -6,7 +6,7 @@ set(org.kde.desktop_SRCS
@@ -2990,7 +3310,7 @@ index b977752..d709ed5 100644
  
  
 -add_library(org.kde.desktop MODULE ${org.kde.desktop_SRCS})
-+add_library(org.kde.desktop STATIC ${org.kde.desktop_SRCS})
++add_library(org.kde.desktop ${MODULE} ${org.kde.desktop_SRCS})
  
  target_link_libraries(org.kde.desktop
      PUBLIC
@@ -3012,10 +3332,10 @@ echo ./source/frameworks/networkmanager-qt
 git -C ./source/frameworks/networkmanager-qt checkout .
 patch -p1 -d ./source/frameworks/networkmanager-qt <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 7975034..1c250c7 100644
+index 72b7fcf..f119eef 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -128,7 +128,7 @@ set(DBUS_INTERFACE_SRCS
+@@ -135,7 +135,7 @@ set(DBUS_INTERFACE_SRCS
      dbus/wirelessdeviceinterface.cpp
  )
  
@@ -3043,24 +3363,33 @@ echo ./source/frameworks/purpose
 git -C ./source/frameworks/purpose checkout .
 patch -p1 -d ./source/frameworks/purpose <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 44e603d..45b4936 100644
+index a645350..83a8613 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -7,7 +7,7 @@ find_package(ECM 5.53.0 REQUIRED NO_MODULE)
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -8,6 +8,16 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Qml Gui DBus Widgets Network Test)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Qml Gui DBus Widgets Network Test X11Extras Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Qml Gui DBus Widgets Network Test)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
++
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -25,7 +25,7 @@ include(ECMQtDeclareLoggingCategory)
- set(KF5_VERSION "5.53.0") # handled by release scripts
- set(KF5_DEP_VERSION "5.53.0") # handled by release scripts
+@@ -26,6 +36,9 @@ set(KF5_VERSION "5.54.0") # handled by release scripts
+ set(KF5_DEP_VERSION "5.54.0") # handled by release scripts
  
--find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons I18n Config)
-+find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons I18n Config DBusAddons Crash WindowSystem IconThemes Archive WidgetsAddons ItemViews ConfigWidgets GuiAddons)
+ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons I18n Config)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS DBusAddons Crash WindowSystem IconThemes Archive WidgetsAddons ItemViews ConfigWidgets GuiAddons)
++endif()
  
  # Debian is a special snow flake and uses nodejs as binary name
  # https://lists.debian.org/debian-devel-announce/2012/07/msg00002.html
@@ -3069,7 +3398,7 @@ echo ./source/frameworks/kauth
 git -C ./source/frameworks/kauth checkout .
 patch -p1 -d ./source/frameworks/kauth <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 9850acd..ed55a72 100644
+index 9850acd..46217f5 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -104,7 +104,7 @@ endif ()
@@ -3077,7 +3406,7 @@ index 9850acd..ed55a72 100644
      set(KAUTH_BACKEND_SRCS ${KAUTH_BACKEND_SRCS})
      # KAuth::AuthBackend is not exported
 -    add_library(kauth_backend_plugin MODULE ${KAUTH_BACKEND_SRCS} AuthBackend.cpp ${kauthdebug_SRCS})
-+    add_library(kauth_backend_plugin ${KAUTH_BACKEND_SRCS} AuthBackend.cpp ${kauthdebug_SRCS})
++    add_library(kauth_backend_plugin ${MODULE} ${KAUTH_BACKEND_SRCS} AuthBackend.cpp ${kauthdebug_SRCS})
      target_link_libraries(kauth_backend_plugin PRIVATE ${KAUTH_BACKEND_LIBS})
      set_target_properties(kauth_backend_plugin PROPERTIES PREFIX "")
  
@@ -3086,7 +3415,7 @@ index 9850acd..ed55a72 100644
  if (NOT "${KAUTH_HELPER_BACKEND_NAME}" STREQUAL "FAKE" AND TARGET Qt5::Widgets)
      # KAuth::HelperProxy is not exported
 -    add_library(kauth_helper_plugin MODULE ${KAUTH_HELPER_BACKEND_SRCS} HelperProxy.cpp ${kauthdebug_SRCS})
-+    add_library(kauth_helper_plugin ${KAUTH_HELPER_BACKEND_SRCS} HelperProxy.cpp ${kauthdebug_SRCS})
++    add_library(kauth_helper_plugin ${MODULE} ${KAUTH_HELPER_BACKEND_SRCS} HelperProxy.cpp ${kauthdebug_SRCS})
      target_link_libraries(kauth_helper_plugin PRIVATE ${KAUTH_HELPER_BACKEND_LIBS})
      set_target_properties(kauth_helper_plugin PROPERTIES PREFIX "")
      install(TARGETS kauth_helper_plugin
@@ -3095,7 +3424,7 @@ echo ./source/frameworks/kcoreaddons
 git -C ./source/frameworks/kcoreaddons checkout .
 patch -p1 -d ./source/frameworks/kcoreaddons <<'EOF'
 diff --git a/KF5CoreAddonsMacros.cmake b/KF5CoreAddonsMacros.cmake
-index e762384..cd390cf 100644
+index d7cc464..f52fb94 100644
 --- a/KF5CoreAddonsMacros.cmake
 +++ b/KF5CoreAddonsMacros.cmake
 @@ -121,7 +121,7 @@ function(kcoreaddons_add_plugin plugin)
@@ -3103,12 +3432,12 @@ index e762384..cd390cf 100644
      get_filename_component(json "${KCA_ADD_PLUGIN_JSON}" REALPATH)
  
 -    add_library(${plugin} MODULE ${KCA_ADD_PLUGIN_SOURCES})
-+    add_library(${plugin} STATIC ${KCA_ADD_PLUGIN_SOURCES})
++    add_library(${plugin} ${MODULE} ${KCA_ADD_PLUGIN_SOURCES})
      set_property(TARGET ${plugin} APPEND PROPERTY AUTOGEN_TARGET_DEPENDS ${json})
      # If find_package(ECM 5.38) or higher is called, output the plugin in a INSTALL_NAMESPACE subfolder.
      # See https://community.kde.org/Guidelines_and_HOWTOs/Making_apps_run_uninstalled
 diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
-index 0cf99e6..411825b 100644
+index 0cf99e6..3435678 100644
 --- a/autotests/CMakeLists.txt
 +++ b/autotests/CMakeLists.txt
 @@ -9,7 +9,7 @@ if(NOT Qt5Test_FOUND)
@@ -3116,7 +3445,7 @@ index 0cf99e6..411825b 100644
  
  macro(build_plugin pname)
 -    add_library(${pname} MODULE ${ARGN})
-+    add_library(${pname} STATIC ${ARGN})
++    add_library(${pname} ${MODULE} ${ARGN})
      ecm_mark_as_test(${pname})
      target_link_libraries(${pname} KF5::CoreAddons)
  endmacro()
@@ -3146,34 +3475,44 @@ echo ./source/frameworks/kross
 git -C ./source/frameworks/kross checkout .
 patch -p1 -d ./source/frameworks/kross <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 55cd594..1b2d88b 100644
+index b480079..3620300 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -30,7 +30,7 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KROSS
-                         SOVERSION 5)
+@@ -31,7 +31,15 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KROSS
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Script Xml Widgets UiTools)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Script Xml Widgets UiTools Concurrent PrintSupport Svg TextToSpeech X11Extras)
- 
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Script Xml Widgets UiTools)
+-
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent PrintSupport Svg TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  
  find_package(Qt5Test ${REQUIRED_QT_VERSION} CONFIG QUIET)
-@@ -52,6 +52,13 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
+ set_package_properties(Qt5Test PROPERTIES
+@@ -52,6 +60,15 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  remove_definitions(-DQT_NO_CAST_FROM_ASCII)
  
 diff --git a/src/modules/CMakeLists.txt b/src/modules/CMakeLists.txt
-index 48e2c02..da56a63 100644
+index 48e2c02..97ad814 100644
 --- a/src/modules/CMakeLists.txt
 +++ b/src/modules/CMakeLists.txt
 @@ -3,7 +3,7 @@ if( Qt5UiTools_FOUND )
@@ -3181,7 +3520,7 @@ index 48e2c02..da56a63 100644
  
  	set(krossmoduleforms_SRCS form.cpp)
 -    add_library(krossmoduleforms MODULE ${krossmoduleforms_SRCS})
-+	add_library(krossmoduleforms STATIC ${krossmoduleforms_SRCS})
++	add_library(krossmoduleforms ${MODULE} ${krossmoduleforms_SRCS})
  
      target_link_libraries(krossmoduleforms
         Qt5::UiTools
@@ -3190,12 +3529,12 @@ index 48e2c02..da56a63 100644
  
  set(krossmodulekdetranslation_SRCS translation.cpp)
 -add_library(krossmodulekdetranslation MODULE ${krossmodulekdetranslation_SRCS})
-+add_library(krossmodulekdetranslation STATIC ${krossmodulekdetranslation_SRCS})
++add_library(krossmodulekdetranslation ${MODULE} ${krossmodulekdetranslation_SRCS})
  
  target_link_libraries(krossmodulekdetranslation
     KF5::Parts
 diff --git a/src/qts-interpreter/CMakeLists.txt b/src/qts-interpreter/CMakeLists.txt
-index 666789b..ba66a7c 100644
+index 666789b..736fc27 100644
 --- a/src/qts-interpreter/CMakeLists.txt
 +++ b/src/qts-interpreter/CMakeLists.txt
 @@ -5,7 +5,7 @@ ecm_qt_declare_logging_category(
@@ -3203,12 +3542,12 @@ index 666789b..ba66a7c 100644
      CATEGORY_NAME org.kde.kross.qtscript
  )
 -add_library(krossqts MODULE ${krossqts_PART_SRCS})
-+add_library(krossqts STATIC ${krossqts_PART_SRCS})
++add_library(krossqts ${MODULE} ${krossqts_PART_SRCS})
  target_link_libraries(krossqts
      KF5::KrossCore
      Qt5::Script
 diff --git a/src/qts/CMakeLists.txt b/src/qts/CMakeLists.txt
-index 93d3bd9..f97106b 100644
+index 93d3bd9..f2ee6be 100644
 --- a/src/qts/CMakeLists.txt
 +++ b/src/qts/CMakeLists.txt
 @@ -5,7 +5,7 @@ ecm_qt_declare_logging_category(
@@ -3216,7 +3555,7 @@ index 93d3bd9..f97106b 100644
      CATEGORY_NAME org.kde.kross.qts_plugin
  )
 -add_library(krossqtsplugin MODULE ${krossqtsplugin_LIB_SRCS})
-+add_library(krossqtsplugin STATIC ${krossqtsplugin_LIB_SRCS})
++add_library(krossqtsplugin ${MODULE} ${krossqtsplugin_LIB_SRCS})
  target_link_libraries(krossqtsplugin
      KF5::I18n
      KF5::KrossCore
@@ -3225,7 +3564,7 @@ echo ./source/frameworks/kwayland
 git -C ./source/frameworks/kwayland checkout .
 patch -p1 -d ./source/frameworks/kwayland <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 7f3155f..157d7d5 100644
+index 3cb3311..656a734 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -41,6 +41,7 @@ set_package_properties(Wayland PROPERTIES
@@ -3237,28 +3576,28 @@ index 7f3155f..157d7d5 100644
  
  include(KDEInstallDirs)
 diff --git a/src/client/CMakeLists.txt b/src/client/CMakeLists.txt
-index b191390..cb0d734 100644
+index 2d7e73b..98f019e 100644
 --- a/src/client/CMakeLists.txt
 +++ b/src/client/CMakeLists.txt
-@@ -218,7 +218,7 @@ ecm_add_wayland_client_protocol(CLIENT_LIB_SRCS
+@@ -225,7 +225,7 @@ ecm_add_wayland_client_protocol(CLIENT_LIB_SRCS
      BASENAME remote-access
  )
  
 -add_library(KF5WaylandClient ${CLIENT_LIB_SRCS})
-+add_library(KF5WaylandClient STATIC ${CLIENT_LIB_SRCS})
++add_library(KF5WaylandClient ${MODULE} ${CLIENT_LIB_SRCS})
  generate_export_header(KF5WaylandClient
      BASE_NAME
          KWaylandClient
 diff --git a/src/server/CMakeLists.txt b/src/server/CMakeLists.txt
-index 8e0cc9f..9cb9298 100644
+index 7566ef3..1d9d8f3 100644
 --- a/src/server/CMakeLists.txt
 +++ b/src/server/CMakeLists.txt
-@@ -252,7 +252,7 @@ set(SERVER_GENERATED_SRCS
+@@ -261,7 +261,7 @@ set(SERVER_GENERATED_SRCS
  
  set_source_files_properties(${SERVER_GENERATED_SRCS} PROPERTIES SKIP_AUTOMOC ON)
  
 -add_library(KF5WaylandServer ${SERVER_LIB_SRCS})
-+add_library(KF5WaylandServer STATIC ${SERVER_LIB_SRCS})
++add_library(KF5WaylandServer ${MODULE} ${SERVER_LIB_SRCS})
  generate_export_header(KF5WaylandServer
      BASE_NAME
          KWaylandServer
@@ -3267,34 +3606,45 @@ echo ./source/frameworks/kparts
 git -C ./source/frameworks/kparts checkout .
 patch -p1 -d ./source/frameworks/kparts <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ba80366..f61c33a 100644
+index 46fec75..7b0b75b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,7 +13,7 @@ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKA
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -14,6 +14,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets Xml)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets Xml X11Extras Concurrent Svg PrintSupport TextToSpeech)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets Xml)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent Svg PrintSupport TextToSpeech)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -42,6 +42,13 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+@@ -42,6 +51,17 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    if (X11_FOUND)
++        find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
++    endif ()
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  remove_definitions(-DQT_NO_CAST_FROM_ASCII)
  remove_definitions(-DQT_NO_CAST_FROM_BYTEARRAY)
 diff --git a/templates/kpartsapp/src/part/CMakeLists.txt b/templates/kpartsapp/src/part/CMakeLists.txt
-index 006bd84..81a933d 100644
+index 006bd84..623512a 100644
 --- a/templates/kpartsapp/src/part/CMakeLists.txt
 +++ b/templates/kpartsapp/src/part/CMakeLists.txt
 @@ -4,7 +4,7 @@ set(%{APPNAMELC}_PART_SRCS
@@ -3302,12 +3652,12 @@ index 006bd84..81a933d 100644
  )
  
 -add_library(%{APPNAMELC}part MODULE ${%{APPNAMELC}_PART_SRCS})
-+add_library(%{APPNAMELC}part STATIC ${%{APPNAMELC}_PART_SRCS})
++add_library(%{APPNAMELC}part ${MODULE} ${%{APPNAMELC}_PART_SRCS})
  
  target_link_libraries(%{APPNAMELC}part
      KF5::I18n
 diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
-index f8c69e6..cf2fc18 100644
+index f8c69e6..64e10dd 100644
 --- a/tests/CMakeLists.txt
 +++ b/tests/CMakeLists.txt
 @@ -21,13 +21,13 @@ target_link_libraries(normalktmtest ${PARTS_TEST_LIBRARY_DEPENDENCIES})
@@ -3315,14 +3665,14 @@ index f8c69e6..cf2fc18 100644
  ########### next target ###############
  
 -add_library(spellcheckplugin MODULE plugin_spellcheck.cpp)
-+add_library(spellcheckplugin STATIC plugin_spellcheck.cpp)
++add_library(spellcheckplugin ${MODULE} plugin_spellcheck.cpp)
  target_link_libraries(spellcheckplugin ${PARTS_TEST_LIBRARY_DEPENDENCIES} )
  install(TARGETS spellcheckplugin  DESTINATION ${KDE_INSTALL_PLUGINDIR} )
  
  ########### next target ###############
  
 -add_library(notepadpart MODULE notepad.cpp)
-+add_library(notepadpart STATIC notepad.cpp)
++add_library(notepadpart ${MODULE} notepad.cpp)
  target_link_libraries(notepadpart ${PARTS_TEST_LIBRARY_DEPENDENCIES})
  install(TARGETS notepadpart  DESTINATION ${KDE_INSTALL_PLUGINDIR} )
  
@@ -3331,25 +3681,34 @@ echo ./source/frameworks/kdeclarative
 git -C ./source/frameworks/kdeclarative checkout .
 patch -p1 -d ./source/frameworks/kdeclarative <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index dffd476..30186ea 100644
+index 63887e5..2ae3463 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,7 +14,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ECM_MODULE_PATH} ${ECM
- 
+@@ -15,6 +15,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ECM_MODULE_PATH} ${ECM
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Qml Quick Gui)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Qml Quick Gui Concurrent X11Extras Svg)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Qml Quick Gui)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent Svg)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endif()
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -28,6 +28,9 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+@@ -28,6 +37,11 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Package ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
-+find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
++endif()
  
  #########################################################################
  
@@ -3475,15 +3834,16 @@ echo ./source/frameworks/kcompletion
 git -C ./source/frameworks/kcompletion checkout .
 patch -p1 -d ./source/frameworks/kcompletion <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8920c20..9b95741 100644
+index 3aa34e3..fc08275 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -32,7 +32,7 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KCOMPLETION
- # Dependencies
+@@ -33,6 +33,9 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KCOMPLETION
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED DBus)
++endif()
  
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
@@ -3492,22 +3852,29 @@ echo ./source/frameworks/kpeople
 git -C ./source/frameworks/kpeople checkout .
 patch -p1 -d ./source/frameworks/kpeople <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8aa5b88..27d28ec 100644
+index 8048588..2b3cf3f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,13 +13,14 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
- 
+@@ -14,12 +14,22 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  set(REQUIRED_QT_VERSION 5.9.0)
  
--find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml)
-+find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml X11Extras)
+ find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml)
++if (X11_FOUND)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++endif ()
++if (WIN32)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++endif ()
++
  
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} CONFIG REQUIRED)
-+find_package(KF5DBusAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
++if(NOT BUILD_SHARED_LIBS)
++    find_package(KF5DBusAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
++endif()
  
  include(ECMSetupVersion)
  include(ECMGenerateHeaders)
@@ -3522,14 +3889,14 @@ index 6558616..492e3eb 100644
                      personactionsmodel.cpp
                      peopleqmlplugin.cpp)
 diff --git a/src/plugins/akonadi/CMakeLists.txt b/src/plugins/akonadi/CMakeLists.txt
-index 23615bc..7a6d661 100644
+index 23615bc..d855790 100644
 --- a/src/plugins/akonadi/CMakeLists.txt
 +++ b/src/plugins/akonadi/CMakeLists.txt
 @@ -1,6 +1,6 @@
  ecm_qt_declare_logging_category(KF5People_akonadi_debug_SRCS HEADER kpeople_akonadi_plugin_debug.h IDENTIFIER KPEOPLE_AKONADI_PLUGIN_LOG CATEGORY_NAME kf5.kpeople.plugin.akonadi)
  
 -add_library(akonadi_kpeople_plugin MODULE akonadidatasource.cpp ${KF5People_akonadi_debug_SRCS})
-+add_library(akonadi_kpeople_plugin STATIC akonadidatasource.cpp ${KF5People_akonadi_debug_SRCS})
++add_library(akonadi_kpeople_plugin ${MODULE} akonadidatasource.cpp ${KF5People_akonadi_debug_SRCS})
  
  target_link_libraries (akonadi_kpeople_plugin
      ${KDEPIMLIBS_AKONADI_LIBS}
@@ -3547,7 +3914,7 @@ index 66b1a5a..210f113 100644
  
  target_link_libraries (KF5PeopleWidgets
 diff --git a/src/widgets/plugins/CMakeLists.txt b/src/widgets/plugins/CMakeLists.txt
-index e189aff..f356854 100644
+index e189aff..d421e72 100644
 --- a/src/widgets/plugins/CMakeLists.txt
 +++ b/src/widgets/plugins/CMakeLists.txt
 @@ -1,21 +1,21 @@
@@ -3555,7 +3922,7 @@ index e189aff..f356854 100644
  
  # Email plugin
 -# add_library(emaildetailswidgetplugin MODULE emaildetailswidget.cpp)
-+# add_library(emaildetailswidgetplugin STATIC emaildetailswidget.cpp)
++# add_library(emaildetailswidgetplugin ${MODULE} emaildetailswidget.cpp)
  # target_link_libraries(emaildetailswidgetplugin Qt5::Core Qt5::Gui ${KDE4_KDECORE_LIBRARY} KF5::People KF5::PeopleWidgets)
  #
  # install(TARGETS emaildetailswidgetplugin DESTINATION ${PLUGIN_INSTALL_DIR})
@@ -3563,7 +3930,7 @@ index e189aff..f356854 100644
  #
  # #  Merge Plugin
 -# add_library(mergecontactswidgetplugin MODULE mergecontactswidget.cpp personpresentationwidget.cpp)
-+# add_library(mergecontactswidgetplugin STATIC mergecontactswidget.cpp personpresentationwidget.cpp)
++# add_library(mergecontactswidgetplugin ${MODULE} mergecontactswidget.cpp personpresentationwidget.cpp)
  # target_link_libraries(mergecontactswidgetplugin Qt5::Core Qt5::Gui ${KDE4_KDECORE_LIBRARY} KF5::People KF5::PeopleWidgets)
  #
  # install(TARGETS mergecontactswidgetplugin DESTINATION ${PLUGIN_INSTALL_DIR})
@@ -3571,22 +3938,8 @@ index e189aff..f356854 100644
  #
  # # Phone plugin
 -# add_library(phonedetailswidgetplugin MODULE phonedetailswidget.cpp)
-+# add_library(phonedetailswidgetplugin STATIC phonedetailswidget.cpp)
++# add_library(phonedetailswidgetplugin ${MODULE} phonedetailswidget.cpp)
  # target_link_libraries(phonedetailswidgetplugin Qt5::Core Qt5::Gui ${KDE4_KDECORE_LIBRARY} KF5::People KF5::PeopleWidgets)
  #
  # install(TARGETS phonedetailswidgetplugin DESTINATION ${PLUGIN_INSTALL_DIR})
-EOF
-echo ./source/frameworks/kholidays
-git -C ./source/frameworks/kholidays checkout .
-patch -p1 -d ./source/frameworks/kholidays <<'EOF'
-diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
-index 825bbb9..e72c2b1 100644
---- a/src/declarative/CMakeLists.txt
-+++ b/src/declarative/CMakeLists.txt
-@@ -1,4 +1,4 @@
--add_library(kholidaysdeclarativeplugin SHARED kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
-+add_library(kholidaysdeclarativeplugin kholidaysdeclarativeplugin.cpp holidayregionsmodel.cpp)
- 
- target_link_libraries(kholidaysdeclarativeplugin
-   Qt5::Qml
 EOF
