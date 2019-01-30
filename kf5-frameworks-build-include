@@ -54,7 +54,7 @@ module-set frameworks
     # if you use Make as build system add to cmake-options -G "CodeBlocks - Unix Makefiles"
     # if you use Ninja as build system add to cmake-options -G "CodeBlocks - Ninja"
     # see http://www.cmake.org/cmake/help/v3.0/generator/CodeBlocks.html
-    tag v5.53.0
+    tag v5.54.0
 end module-set
 
 # Set some options for the module kactivities.
@@ -95,5 +95,10 @@ end module
 module-set kirigami
     repository kde-projects
     use-modules kirigami
-    tag v5.53.0
+    tag v5.54.0
 end module-set
+
+# kio doesn't have a 5.54.0 tag
+options kio
+    tag v5.54.0-rc2
+end options
