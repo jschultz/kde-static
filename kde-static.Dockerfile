@@ -70,7 +70,6 @@ RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --
 # Download, patch and build QT everywhere, QT webkit and friends, then delete sources
 RUN sudo xbps-install -y wget xz libaccounts-glib-devel doxygen
 COPY qt.musl.patch /home/kdedev
-# COPY execinfo.h.patch /home/kdedev
 COPY config.opt /home/kdedev
 RUN sudo sh -c 'printf -- "-static\n-release\n" >> config.opt'
 COPY libaccounts.patch /home/kdedev
@@ -78,7 +77,6 @@ COPY signon.patch /home/kdedev
 RUN wget -qO- http://download.qt.io/official_releases/qt/5.11/5.11.3/single/qt-everywhere-src-5.11.3.tar.xz | tar xJ && \
 	patch -d ~/qt-everywhere-src-5.11.3 -p0 < ~/qt.musl.patch && \
 	wget -qO- https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.11.3-libressl-2.8.patch | patch -d ~/qt-everywhere-src-5.11.3/qtbase -p1 && \
-#	sudo patch -d / -p0 < ~/execinfo.h.patch &&
 	mv ~/config.opt ~/qt-everywhere-src-5.11.3 && \
 	cd ~/qt-everywhere-src-5.11.3 && ./configure -redo && make -j4 -Oline && make -j4 install && \
 	cd ~ && rm -r ~/qt-everywhere-src-5.11.3 && \
@@ -112,9 +110,10 @@ RUN git clone git://anongit.kde.org/kdesrc-build.git
 RUN mkdir kde
 COPY kdesrc-buildrc-sources       kde
 COPY kf5-frameworks-build-include kde
-RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies okular
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies okular
 # Need kholidays or patch will fail
-RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only kholidays
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only kholidays
+ADD $HOME/src/okular-static.cache/kde .
 
 # Patch KDE sources
 COPY patch-kde.sh kde
