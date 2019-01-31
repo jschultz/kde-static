@@ -48,10 +48,10 @@ index e44cb7ac..b6e9c966 100644
  target_link_libraries(${PHONON_LIB_SONAME}experimental ${PHONON_LIBS})
  set_target_properties(${PHONON_LIB_SONAME}experimental PROPERTIES
 diff --git a/phonon/phonon_export.h b/phonon/phonon_export.h
-index 52d50cf8..c5c0597c 100644
+index 52d50cf8..31376337 100644
 --- a/phonon/phonon_export.h
 +++ b/phonon/phonon_export.h
-@@ -25,21 +25,25 @@
+@@ -25,20 +25,24 @@
  
  #include <QtCore/QtGlobal>
  
@@ -67,31 +67,27 @@ index 52d50cf8..c5c0597c 100644
 -#   define PHONON_EXPORT Q_DECL_EXPORT
 -#  else /* We are using this library */
 -#   define PHONON_EXPORT Q_DECL_IMPORT
--#  endif
--# endif
--#endif
-+ifdef BUILD_SHARED_LIBS
-+ ifndef PHONON_EXPORT
-+  if defined Q_WS_WIN
-+   ifdef MAKE_PHONON_LIB /* We are building this library */
-+    define PHONON_EXPORT Q_DECL_EXPORT
-+   else /* We are using this library */
-+    define PHONON_EXPORT Q_DECL_IMPORT
-+   endif
-+  else /* UNIX */
-+   ifdef MAKE_PHONON_LIB /* We are building this library */
-+    define PHONON_EXPORT Q_DECL_EXPORT
-+   else /* We are using this library */
-+    define PHONON_EXPORT Q_DECL_IMPORT
-+   endif
-+  endif
-+ endif
-+else()
-+ define PHONON_EXPORT
-+endif
++#ifdef BUILD_SHARED_LIBS
++# ifndef PHONON_EXPORT
++#  if defined Q_WS_WIN
++#   ifdef MAKE_PHONON_LIB /* We are building this library */
++#    define PHONON_EXPORT Q_DECL_EXPORT
++#   else /* We are using this library */
++#    define PHONON_EXPORT Q_DECL_IMPORT
++#   endif
++#  else /* UNIX */
++#   ifdef MAKE_PHONON_LIB /* We are building this library */
++#    define PHONON_EXPORT Q_DECL_EXPORT
++#   else /* We are using this library */
++#    define PHONON_EXPORT Q_DECL_IMPORT
++#   endif
+ #  endif
+ # endif
++#else()
++# define PHONON_EXPORT
+ #endif
  
  #ifndef PHONON_DEPRECATED
- # define PHONON_DEPRECATED Q_DECL_DEPRECATED
 diff --git a/qt_phonon.pri b/qt_phonon.pri
 index 9936e8de..daf824f8 100644
 --- a/qt_phonon.pri
@@ -197,7 +193,7 @@ echo ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9584e4994..06dbae05a 100644
+index 9584e4994..636467b28 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
@@ -209,9 +205,13 @@ index 9584e4994..06dbae05a 100644
  set (KDE_APPLICATIONS_VERSION "${KDE_APPLICATIONS_VERSION_MAJOR}.${KDE_APPLICATIONS_VERSION_MINOR}.${KDE_APPLICATIONS_VERSION_MICRO}")
  
  project(okular VERSION 1.6.${KDE_APPLICATIONS_VERSION_MICRO})
-@@ -33,6 +33,16 @@ ecm_setup_version(${PROJECT_VERSION}
+@@ -32,7 +32,20 @@ ecm_setup_version(${PROJECT_VERSION}
+                   VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/core/version.h"
                    PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Okular5ConfigVersion.cmake")
  
++find_package(X11)
++set(HAVE_X11 ${X11_FOUND})
++
  find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Core DBus Test Widgets PrintSupport Svg Qml Quick)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${QT_REQUIRED_VERSION} CONFIG REQUIRED COMPONENTS Concurrent)
@@ -226,17 +226,17 @@ index 9584e4994..06dbae05a 100644
  find_package(Qt5 ${QT_REQUIRED_VERSION} OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
      message(STATUS "Qt5TextToSpeech not found, speech features will be disabled")
-@@ -71,6 +81,9 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
+@@ -71,6 +84,9 @@ find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS
      JS
      Wallet
  )
 +if(NOT BUILD_SHARED_LIBS)
-+    find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS DBusAddons GuiAddons Attica)
++    find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS DBusAddons GuiAddons Attica GlobalAccel)
 +endif()
  
  if(KF5Wallet_FOUND)
      add_definitions(-DWITH_KWALLET=1)
-@@ -96,7 +109,9 @@ set_package_properties(KF5Kirigami2 PROPERTIES
+@@ -96,7 +112,9 @@ set_package_properties(KF5Kirigami2 PROPERTIES
      TYPE RUNTIME
  )
  find_package(Phonon4Qt5 CONFIG REQUIRED)
@@ -247,7 +247,7 @@ index 9584e4994..06dbae05a 100644
  set_package_properties(KDEExperimentalPurpose PROPERTIES
      DESCRIPTION "A framework for services and actions integration"
      PURPOSE "Required for enabling the share menu in Okular"
-@@ -142,8 +157,8 @@ if(BUILD_COVERAGE)
+@@ -142,8 +160,8 @@ if(BUILD_COVERAGE)
  endif()
  
  add_subdirectory( ui )
@@ -257,7 +257,7 @@ index 9584e4994..06dbae05a 100644
  if(BUILD_TESTING)
     add_subdirectory( autotests )
     add_subdirectory( conf/autotests )
-@@ -247,7 +262,12 @@ ki18n_wrap_ui(okularcore_SRCS
+@@ -247,7 +265,12 @@ ki18n_wrap_ui(okularcore_SRCS
  
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
@@ -271,7 +271,7 @@ index 9584e4994..06dbae05a 100644
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
-@@ -282,6 +302,7 @@ PRIVATE
+@@ -282,6 +305,7 @@ PRIVATE
      Phonon::phonon4qt5
      ${MATH_LIB}
      ${ZLIB_LIBRARIES}
@@ -279,7 +279,7 @@ index 9584e4994..06dbae05a 100644
  PUBLIC  # these are included from the installed headers
      KF5::CoreAddons
      KF5::XmlGui
-@@ -290,7 +311,6 @@ PUBLIC  # these are included from the installed headers
+@@ -290,7 +314,6 @@ PUBLIC  # these are included from the installed headers
      Qt5::Widgets
  )
  
@@ -287,7 +287,7 @@ index 9584e4994..06dbae05a 100644
  if (KF5Wallet_FOUND)
      target_link_libraries(okularcore PRIVATE KF5::Wallet)
  endif()
-@@ -400,7 +420,7 @@ ki18n_wrap_ui(okularpart_SRCS
+@@ -400,7 +423,7 @@ ki18n_wrap_ui(okularpart_SRCS
  
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
@@ -296,6 +296,16 @@ index 9584e4994..06dbae05a 100644
  generate_export_header(okularpart BASE_NAME okularpart)
  
  target_link_libraries(okularpart okularcore
+diff --git a/config-okular.h.cmake b/config-okular.h.cmake
+index 0caea358a..6311b2ec0 100644
+--- a/config-okular.h.cmake
++++ b/config-okular.h.cmake
+@@ -7,3 +7,5 @@
+ /* Defines if the purpose framework is available */
+ #cmakedefine01 HAVE_MALLOC_TRIM
+ 
++#cmakedefine01 HAVE_X11
++
 diff --git a/core/document.cpp b/core/document.cpp
 index 3332c3a89..f3d95bcc4 100644
 --- a/core/document.cpp
@@ -521,21 +531,22 @@ index 628f74be1..26c08baec 100644
      target_compile_definitions(okular PUBLIC -DWITH_KACTIVITIES=1)
  
 diff --git a/shell/main.cpp b/shell/main.cpp
-index 983690d08..5def94c69 100644
+index 983690d08..df128a2de 100644
 --- a/shell/main.cpp
 +++ b/shell/main.cpp
-@@ -28,6 +28,17 @@
+@@ -28,6 +28,18 @@
  #include "okular_main.h"
  #include "shellutils.h"
  
 +#ifndef BUILD_SHARED_LIBS
++#include <config-okular.h>
 +#include <QtPlugin>
++Q_IMPORT_PLUGIN(QSvgIconPlugin)
 +#if HAVE_X11
 +Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
 +#endif
 +#if defined _WIN32 || defined _WIN64
 +Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
-+Q_IMPORT_PLUGIN(QSvgIconPlugin)
 +#endif
 +#endif
 +
@@ -543,18 +554,9 @@ index 983690d08..5def94c69 100644
  {
      QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 diff --git a/shell/shell.cpp b/shell/shell.cpp
-index d3f0b3e49..cda3e33a1 100644
+index d3f0b3e49..9cd41d0e3 100644
 --- a/shell/shell.cpp
 +++ b/shell/shell.cpp
-@@ -37,7 +37,7 @@
- #include <KToolBar>
- #include <KRecentFilesAction>
- #include <KServiceTypeTrader>
--#include <KToggleFullScreenAction>
-+#include <KToggleFullScreenAction>m
- #include <KActionCollection>
- #include <KWindowSystem>
- #include <QTabWidget>
 @@ -53,6 +53,10 @@
  #include <KActivities/ResourceInstance>
  #endif
@@ -780,16 +782,16 @@ echo ./source/frameworks/kactivities
 git -C ./source/frameworks/kactivities checkout .
 patch -p1 -d ./source/frameworks/kactivities <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5000778..d3143df 100644
+index 5000778..3f36520 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,6 +44,9 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
  # Qt
  set (CMAKE_AUTOMOC ON)
  find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Core DBus)
-+if (X11_FOUND)
-+    find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS X11Extras)
-+endif ()
++if(NOT BUILD_SHARED_LIBS)
++    find_Qt5GuiExtras()
++endif()
  
  # Basic includes
  include (CPack)
@@ -824,22 +826,20 @@ echo ./source/frameworks/knewstuff
 git -C ./source/frameworks/knewstuff checkout .
 patch -p1 -d ./source/frameworks/knewstuff <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8389685..5a3446a 100644
+index 8389685..06584d6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -16,7 +16,10 @@ include(KDECMakeSettings)
+@@ -16,7 +16,8 @@ include(KDECMakeSettings)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  
  set(REQUIRED_QT_VERSION 5.9.0)
 -find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS Widgets Xml)
 +find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS Widgets Xml Concurrent PrintSupport Svg TextToSpeech)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED COMPONENTS X11Extras)
-+endif ()
++find_Qt5GuiExtras()
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE COMPONENTS Qml Quick)
  
  find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
-@@ -31,6 +34,13 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+@@ -31,6 +32,13 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
@@ -875,23 +875,21 @@ echo ./source/frameworks/krunner
 git -C ./source/frameworks/krunner checkout .
 patch -p1 -d ./source/frameworks/krunner <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 506d155..ef6aa1a 100644
+index 506d155..e72b360 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -37,6 +37,12 @@ ecm_setup_version(PROJECT
+@@ -37,6 +37,10 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Gui Widgets Quick)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED  Sql Svg PrintSupport TextToSpeech)
 +endif()
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED X11Extras)
-+endif ()
++find_Qt5GuiExtras()
  
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-@@ -45,6 +51,22 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+@@ -45,6 +49,22 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Plasma ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ThreadWeaver ${KF5_DEP_VERSION} REQUIRED)
@@ -962,18 +960,16 @@ echo ./source/frameworks/kxmlrpcclient
 git -C ./source/frameworks/kxmlrpcclient checkout .
 patch -p1 -d ./source/frameworks/kxmlrpcclient <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3b81a4e3a..acb850147 100644
+index 3b81a4e3a..53f97b4c1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -36,9 +36,20 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
+@@ -36,9 +36,18 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KXMLRPCCLIENT
  )
  
  ########### Find packages ###########
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Concurrent)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS X11Extras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif ()
 +
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
@@ -992,27 +988,22 @@ echo ./source/frameworks/ktextwidgets
 git -C ./source/frameworks/ktextwidgets checkout .
 patch -p1 -d ./source/frameworks/ktextwidgets <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a0142ca..8061330 100644
+index a0142ca..6359cb1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -32,6 +32,16 @@ ecm_setup_version(PROJECT
+@@ -32,6 +32,11 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
 +
  
  find_package(Qt5 OPTIONAL_COMPONENTS TextToSpeech)
  if (NOT Qt5TextToSpeech_FOUND)
-@@ -49,6 +59,12 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
+@@ -49,6 +54,12 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Sonnet ${KF5_DEP_VERSION} REQUIRED)
@@ -1030,26 +1021,35 @@ echo ./source/frameworks/kinit
 git -C ./source/frameworks/kinit checkout .
 patch -p1 -d ./source/frameworks/kinit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 313f631..f72519d 100644
+index 313f631..a7788f2 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -11,6 +11,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
+ project(KInit)
+ 
+ include(FeatureSummary)
+-find_package(ECM 5.54.0  NO_MODULE)
++find_package(ECM 5.54.0  NO_MODULE REQUIRED)
+ set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
+ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
+ 
+@@ -11,10 +11,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Core Gui DBus)
-+if(NOT BUILD_SHARED_LIBS)
-+    find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Concurrent Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
-+endif() 
++
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -54,6 +63,12 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+ 
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED Concurrent Svg)
++    find_Qt5GuiExtras()
++endif() 
+ 
+ include(CMakePackageConfigHelpers)
+ include(ECMSetupVersion)
+@@ -54,6 +59,12 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
@@ -1233,7 +1233,7 @@ echo ./source/frameworks/khtml
 git -C ./source/frameworks/khtml checkout .
 patch -p1 -d ./source/frameworks/khtml <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 52a55d5..3d66b3c 100644
+index 52a55d5..efdf512 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -20,6 +20,9 @@ include(ECMQtDeclareLoggingCategory)
@@ -1259,6 +1259,17 @@ index 52a55d5..3d66b3c 100644
  
  ecm_setup_version(PROJECT VARIABLE_PREFIX KHTML
                          VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/khtml_version.h"
+@@ -89,9 +98,7 @@ set_package_properties(PNG PROPERTIES DESCRIPTION "PNG decoding library"
+                        PURPOSE "Required for decoding and displaying PNG images"
+                       )
+ 
+-if(NOT WIN32 AND NOT APPLE AND X11_FOUND)
+-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+-endif()
++find_Qt5GuiExtras()
+ 
+ find_package(Gperf REQUIRED)
+ 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index a593599..9b8c69d 100644
 --- a/src/CMakeLists.txt
@@ -1481,7 +1492,7 @@ echo ./source/frameworks/kdelibs4support
 git -C ./source/frameworks/kdelibs4support checkout .
 patch -p1 -d ./source/frameworks/kdelibs4support <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 62bb1d05..ff48350b 100644
+index 62bb1d05..1908413e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -21,6 +21,9 @@ include(CMakeFindFrameworks)
@@ -1506,6 +1517,18 @@ index 62bb1d05..ff48350b 100644
  
  if(WIN32)
      find_package(KDEWin REQUIRED)
+@@ -52,10 +60,10 @@ endif()
+ if (NOT APPLE AND NOT WIN32)
+     find_package(X11)
+ endif()
++find_Qt5GuiExtras()
+ set(HAVE_X11 ${X11_FOUND})
+ if (HAVE_X11)
+   add_feature_info("X11 Session Management (libSM)" X11_SM_FOUND "Support for session management in KApplication")
+-  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+ endif ()
+ if (APPLE)
+     cmake_find_frameworks(CoreFoundation)
 diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
 index 2d9d3af0..04c48a98 100644
 --- a/autotests/CMakeLists.txt
@@ -1652,7 +1675,7 @@ echo ./source/frameworks/plasma-framework
 git -C ./source/frameworks/plasma-framework checkout .
 patch -p1 -d ./source/frameworks/plasma-framework <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c2b735fef..37a47f447 100644
+index c2b735fef..c28568a1b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,6 +44,9 @@ endif()
@@ -1665,7 +1688,7 @@ index c2b735fef..37a47f447 100644
  
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
      COMPONENTS
-@@ -69,6 +72,16 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
+@@ -69,6 +72,18 @@ find_package(KF5 ${KF5_DEP_VERSION} REQUIRED
          Wayland
          DocTools
  )
@@ -1674,14 +1697,27 @@ index c2b735fef..37a47f447 100644
 +        COMPONENTS
 +            Attica
 +            TextWidgets
-+            Phonon4Qt5
++            Crash
 +            Wayland
-+            KF5Crash
 +    )
++    find_package(Phonon4Qt5 4.6.60 REQUIRED)
++    find_package(Wayland 1.16.0 REQUIRED)
++    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
 +endif()
  
  set_package_properties(KF5Wayland PROPERTIES DESCRIPTION "Integration with the Wayland compositor"
                         TYPE OPTIONAL
+@@ -92,9 +107,9 @@ set_package_properties(XCB PROPERTIES DESCRIPTION "X protocol C-language Binding
+                        URL "http://xcb.freedesktop.org"
+                        TYPE OPTIONAL
+                       )
++find_Qt5GuiExtras()
+ if(X11_FOUND AND XCB_XCB_FOUND)
+   set(HAVE_X11 1)
+-  find_package(Qt5 REQUIRED NO_MODULE COMPONENTS X11Extras)
+   #X11_Xrender discovery is done by FindX11
+   #add_feature_info("X Rendering Extension (libXrender)" X11_Xrender_FOUND "Support for compositing, rendering operations, and alpha-blending. STRONGLY RECOMMENDED")
+ endif()
 diff --git a/KF5PlasmaMacros.cmake b/KF5PlasmaMacros.cmake
 index 494b42d56..504820345 100644
 --- a/KF5PlasmaMacros.cmake
@@ -1911,6 +1947,20 @@ EOF
 echo ./source/frameworks/kglobalaccel
 git -C ./source/frameworks/kglobalaccel checkout .
 patch -p1 -d ./source/frameworks/kglobalaccel <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4803fac..392c08b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -62,8 +62,8 @@ set(HAVE_X11 0)
+ 
+ if(X11_FOUND AND XCB_XCB_FOUND)
+     set(HAVE_X11 1)
+-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+ endif()
++find_Qt5GuiExtras()
+ 
+ # Subdirectories
+ if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
 diff --git a/src/runtime/plugins/xcb/CMakeLists.txt b/src/runtime/plugins/xcb/CMakeLists.txt
 index b76477f..0597803 100644
 --- a/src/runtime/plugins/xcb/CMakeLists.txt
@@ -1929,20 +1979,15 @@ echo ./source/frameworks/kservice
 git -C ./source/frameworks/kservice checkout .
 patch -p1 -d ./source/frameworks/kservice <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b39106c..497f6cc 100644
+index b39106c..a60471d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -42,13 +42,21 @@ set(APPLICATIONS_MENU_NAME applications.menu
+@@ -42,13 +42,16 @@ set(APPLICATIONS_MENU_NAME applications.menu
  # Dependencies
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Xml)
 -
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
++find_Qt5GuiExtras()
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
@@ -1990,27 +2035,22 @@ echo ./source/frameworks/knotifyconfig
 git -C ./source/frameworks/knotifyconfig checkout .
 patch -p1 -d ./source/frameworks/knotifyconfig <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index bc9d413..8253d0e 100644
+index bc9d413..6a06d63 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -16,6 +16,16 @@ set(REQUIRED_QT_VERSION 5.9.0)
- 
- # Required Qt5 components to build this framework
- find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus)
+@@ -25,12 +25,29 @@ endif()
+ include(KDEInstallDirs)
+ include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
+ include(KDECMakeSettings)
++
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent PrintSupport Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
 +
- find_package(Qt5 ${REQUIRED_QT_VERSION} QUIET OPTIONAL_COMPONENTS TextToSpeech)
- if (NOT Qt5TextToSpeech_FOUND)
-   message(STATUS "Qt5TextToSpeech not found, speech features will be disabled")
-@@ -31,6 +41,17 @@ find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
+ find_package(Phonon4Qt5 4.6.60 NO_MODULE)
+ 
+ find_package(KF5Completion ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
@@ -2050,26 +2090,21 @@ echo ./source/frameworks/kcmutils
 git -C ./source/frameworks/kcmutils checkout .
 patch -p1 -d ./source/frameworks/kcmutils <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ac05c44..125443c 100644
+index ac05c44..ba30067 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -18,6 +18,15 @@ include(KDECMakeSettings)
+@@ -18,6 +18,10 @@ include(KDECMakeSettings)
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets DBus Qml Quick QuickWidgets)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Svg PrintSupport TextToSpeech Concurrent)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  set(KCMUtils_AUTOMOC_MACRO_NAMES "KCMODULECONTAINER")
  if(NOT CMAKE_VERSION VERSION_LESS "3.10.0")
-@@ -48,6 +57,18 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
+@@ -48,6 +52,18 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Declarative ${KF5_DEP_VERSION} REQUIRED)
@@ -2093,23 +2128,21 @@ echo ./source/frameworks/kdesu
 git -C ./source/frameworks/kdesu checkout .
 patch -p1 -d ./source/frameworks/kdesu <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 382ee98..f23ac40 100644
+index 382ee98..868485e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -14,14 +14,20 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5Core ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
++
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -22,6 +28,9 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+ 
++find_Qt5GuiExtras()
++
+ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Pty ${KF5_DEP_VERSION} REQUIRED)
@@ -2149,10 +2182,18 @@ echo ./source/frameworks/kiconthemes
 git -C ./source/frameworks/kiconthemes checkout .
 patch -p1 -d ./source/frameworks/kiconthemes <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4875f60..7bd12eb 100644
+index 4875f60..9632a9c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -44,6 +44,9 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+@@ -37,6 +37,7 @@ set(REQUIRED_QT_VERSION 5.9.0)
+ find_package(Qt5Widgets ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+ find_package(Qt5Svg ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+ find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
++find_Qt5GuiExtras()
+ 
+ find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
+@@ -44,6 +45,9 @@ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
@@ -2211,23 +2252,19 @@ echo ./source/frameworks/kded
 git -C ./source/frameworks/kded checkout .
 patch -p1 -d ./source/frameworks/kded <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f76e077..9a5fc4e 100644
+index f76e077..8685a4d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,6 +13,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
- 
- set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5 "${REQUIRED_QT_VERSION}" CONFIG REQUIRED DBus Widgets)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
- 
- include(KDEInstallDirs)
+@@ -18,6 +18,8 @@ include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -25,7 +31,10 @@ find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
+ include(KDECMakeSettings)
+ 
++find_Qt5GuiExtras()
++
+ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
+@@ -25,7 +27,10 @@ find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
  find_package(KF5Init ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
@@ -2244,27 +2281,22 @@ echo ./source/frameworks/frameworkintegration
 git -C ./source/frameworks/frameworkintegration checkout .
 patch -p1 -d ./source/frameworks/frameworkintegration <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e2c34da..da327b6 100644
+index e2c34da..cbdcda4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -24,7 +24,15 @@ include(KDECMakeSettings)
+@@ -24,7 +24,10 @@ include(KDECMakeSettings)
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets)
 -
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED DBus Widgets Svg TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  ecm_setup_version(PROJECT VARIABLE_PREFIX FRAMEWORKINTEGRATION
                    VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/frameworkintegration_version.h"
-@@ -44,8 +52,16 @@ if (BUILD_KPACKAGE_INSTALL_HANDLERS)
+@@ -44,8 +47,16 @@ if (BUILD_KPACKAGE_INSTALL_HANDLERS)
     find_package(KF5Package ${KF5_DEP_VERSION} REQUIRED)
     find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  
@@ -2299,6 +2331,21 @@ EOF
 echo ./source/frameworks/kwindowsystem
 git -C ./source/frameworks/kwindowsystem checkout .
 patch -p1 -d ./source/frameworks/kwindowsystem <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1db0294..1483694 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -53,9 +53,9 @@ endif()
+ 
+ set(KWINDOWSYSTEM_HAVE_X11 ${X11_FOUND})
+ 
++find_Qt5GuiExtras()
+ if(X11_FOUND)
+     find_package(XCB COMPONENTS XCB KEYSYMS)
+-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+     set_package_properties(X11_Xrender PROPERTIES DESCRIPTION "X Rendering Extension (libXrender)"
+                            URL "http://www.x.org" TYPE RECOMMENDED
+                            PURPOSE "Support for compositing, rendering operations, and alpha-blending")
 diff --git a/src/platforms/wayland/CMakeLists.txt b/src/platforms/wayland/CMakeLists.txt
 index 97b5592..a5d214f 100644
 --- a/src/platforms/wayland/CMakeLists.txt
@@ -2330,26 +2377,21 @@ echo ./source/frameworks/ktexteditor
 git -C ./source/frameworks/ktexteditor checkout .
 patch -p1 -d ./source/frameworks/ktexteditor <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index fe588b7b..42ccc83e 100644
+index fe588b7b..bab4d977 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -43,6 +43,15 @@ set(REQUIRED_QT_VERSION 5.9.0)
+@@ -43,6 +43,10 @@ set(REQUIRED_QT_VERSION 5.9.0)
  # Required Qt5 components to build this framework
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Core Widgets Qml
    PrintSupport Xml)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent Svg TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
-@@ -52,7 +61,14 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
+@@ -52,7 +56,14 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Sonnet ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
@@ -2427,10 +2469,10 @@ index 7c5476e..e42cc5e 100644
      TARGET_LINK_LIBRARIES(${_logical_name} ${PYTHON_LIBRARY})
      TARGET_LINK_LIBRARIES(${_logical_name} ${EXTRA_LINK_LIBRARIES})
 diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.cmake
-index 3f7f5a8..91698c4 100644
+index 3f7f5a8..de75157 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
-@@ -174,6 +174,19 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
+@@ -174,6 +174,30 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
  
  endif()
  
@@ -2445,7 +2487,18 @@ index 3f7f5a8..91698c4 100644
 +    add_definitions(-DBUILD_SHARED_LIBS)
 +endif()
 +
-+FIND_PACKAGE(X11)
++function(find_Qt5GuiExtras)
++    find_package(X11)
++    if (X11_FOUND)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
++    endif ()
++    if(APPLE)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED MacExtras)
++    endif()
++    if (WIN32)
++        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
++    endif ()
++endfunction()
 +
  ################ Testing setup ####################################
  
@@ -2481,16 +2534,20 @@ echo ./source/frameworks/knotifications
 git -C ./source/frameworks/knotifications checkout .
 patch -p1 -d ./source/frameworks/knotifications <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index da34e23..e6c11cc 100644
+index da34e23..a3a120b 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -66,11 +66,25 @@ endif()
- if(APPLE)
-    find_package(Qt5MacExtras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
- endif()
-+if(WIN32)
-+    find_package(Qt5WinExtras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
-+endif()
+@@ -60,17 +60,23 @@ endif()
+ 
+ set(HAVE_X11 ${X11_FOUND})
+ set(HAVE_XTEST ${X11_XTest_FOUND})
+-if(X11_FOUND)
+-   find_package(Qt5X11Extras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+-endif()
+-if(APPLE)
+-   find_package(Qt5MacExtras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+-endif()
++find_Qt5GuiExtras()
  
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
@@ -2515,20 +2572,28 @@ echo ./source/frameworks/kwallet
 git -C ./source/frameworks/kwallet checkout .
 patch -p1 -d ./source/frameworks/kwallet <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b60d376..7b3e750 100644
+index b60d376..e3a3ad5 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,9 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
+@@ -14,11 +14,17 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus)
 +if(NOT BUILD_SHARED_LIBS)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED TextToSpeech Svg WinExtras)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED TextToSpeech Svg)
 +endif()
++FIND_PACKAGE(X11)
  
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -33,6 +36,13 @@ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
+ include(KDECMakeSettings)
+ 
++find_Qt5GuiExtras()
++
+ include(ECMAddQch)
+ include(ECMSetupVersion)
+ include(ECMQtDeclareLoggingCategory)
+@@ -33,6 +39,13 @@ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
@@ -2560,7 +2625,7 @@ echo ./source/frameworks/kmediaplayer
 git -C ./source/frameworks/kmediaplayer checkout .
 patch -p1 -d ./source/frameworks/kmediaplayer <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 52eb6a4..a0b89d2 100644
+index 52eb6a4..b9b6423 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -13,6 +13,10 @@ find_package(ECM 5.54.0  NO_MODULE)
@@ -2574,18 +2639,13 @@ index 52eb6a4..a0b89d2 100644
  set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  include(KDEInstallDirs)
-@@ -45,10 +49,28 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
+@@ -45,10 +49,23 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kmediaplayer_version.h
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
  find_package(Qt5Widgets ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} COMPONENTS Concurrent PrintSupport TextToSpeech Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
@@ -2608,10 +2668,10 @@ echo ./source/frameworks/kdesignerplugin
 git -C ./source/frameworks/kdesignerplugin checkout .
 patch -p1 -d ./source/frameworks/kdesignerplugin <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2349308..00716f8 100644
+index 2349308..82088b6 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -24,7 +24,24 @@ set_package_properties(Qt5Designer PROPERTIES
+@@ -24,7 +24,19 @@ set_package_properties(Qt5Designer PROPERTIES
     PURPOSE "Required to build the Qt Designer plugins"
     TYPE OPTIONAL
  )
@@ -2627,12 +2687,7 @@ index 2349308..00716f8 100644
 +    find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
 +    find_package (Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED COMPONENTS Svg Concurrent PrintSupport TextToSpeech Sensors Positioning)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  include(ECMPoQmTools)
  
@@ -2654,6 +2709,21 @@ EOF
 echo ./source/frameworks/kidletime
 git -C ./source/frameworks/kidletime checkout .
 patch -p1 -d ./source/frameworks/kidletime <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5ca9c45..a00c43e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -42,8 +42,9 @@ if(NOT APPLE)
+     find_package(XCB COMPONENTS XCB)
+ endif()
+ 
++find_Qt5GuiExtras()
++
+ if(X11_FOUND)
+-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+     find_package(XCB COMPONENTS XCB SYNC)
+     find_package(X11_XCB)
+     set(HAVE_X11 TRUE)
 diff --git a/src/plugins/osx/CMakeLists.txt b/src/plugins/osx/CMakeLists.txt
 index e1b50b8..a0c664d 100644
 --- a/src/plugins/osx/CMakeLists.txt
@@ -2711,10 +2781,10 @@ echo ./source/frameworks/kio
 git -C ./source/frameworks/kio checkout .
 patch -p1 -d ./source/frameworks/kio <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0e8c7ded..a2285051 100644
+index 0e8c7ded..b7785a46 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -49,6 +49,13 @@ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
+@@ -49,6 +49,14 @@ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
  find_package(KF5Solid ${KF5_DEP_VERSION} REQUIRED) # for kio_trash
@@ -2723,12 +2793,13 @@ index 0e8c7ded..a2285051 100644
 +    find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(Phonon4Qt5 REQUIRED)
 +endif()
  
  if (NOT KIOCORE_ONLY)
  find_package(KF5Bookmarks ${KF5_DEP_VERSION} REQUIRED)
-@@ -73,6 +80,9 @@ set_package_properties(KF5DocTools PROPERTIES DESCRIPTION "Provides tools to gen
+@@ -73,6 +81,9 @@ set_package_properties(KF5DocTools PROPERTIES DESCRIPTION "Provides tools to gen
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Network Concurrent Xml Test)
@@ -2738,18 +2809,14 @@ index 0e8c7ded..a2285051 100644
  
  find_package(GSSAPI)
  set_package_properties(GSSAPI PROPERTIES DESCRIPTION "Allows KIO to make use of certain HTTP authentication services"
-@@ -86,9 +96,12 @@ if (NOT APPLE AND NOT WIN32)
+@@ -86,9 +97,7 @@ if (NOT APPLE AND NOT WIN32)
  endif()
  
  set(HAVE_X11 ${X11_FOUND})
 -if (HAVE_X11)
-+if (X11_FOUND)
-     find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
+-    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
 -endif()
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
++find_Qt5GuiExtras()
  
  add_definitions(-DTRANSLATION_DOMAIN=\"kio5\")
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
@@ -2898,21 +2965,17 @@ echo ./source/frameworks/baloo
 git -C ./source/frameworks/baloo checkout .
 patch -p1 -d ./source/frameworks/baloo <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 41dab7fb..b1bc88a6 100644
+index 41dab7fb..51fa7114 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -57,6 +57,16 @@ add_feature_info(EXP ${BUILD_EXPERIMENTAL} "Build experimental features")
+@@ -57,6 +57,12 @@ add_feature_info(EXP ${BUILD_EXPERIMENTAL} "Build experimental features")
  # set up build dependencies
  find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Core DBus Widgets Qml Quick Test)
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Config DBusAddons I18n IdleTime Solid FileMetaData Crash KIO)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
++    
 +    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS WindowSystem IconThemes GuiAddons Archive)
 +endif()
  
@@ -3009,31 +3072,47 @@ index 936d0c9b..9fce64a8 100644
  
  target_link_libraries(baloomonitorplugin
 EOF
+echo ./source/frameworks/kdbusaddons
+git -C ./source/frameworks/kdbusaddons checkout .
+patch -p1 -d ./source/frameworks/kdbusaddons <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 386cfcb..48a2d50 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,7 +18,7 @@ include(ECMQtDeclareLoggingCategory)
+ 
+ set(REQUIRED_QT_VERSION 5.9.0)
+ find_package(Qt5DBus ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+-find_package(Qt5X11Extras ${REQUIRED_QT_VERSION} NO_MODULE)
++find_Qt5GuiExtras()
+ 
+ 
+ include(GenerateExportHeader)
+EOF
 echo ./source/frameworks/kdewebkit
 git -C ./source/frameworks/kdewebkit checkout .
 patch -p1 -d ./source/frameworks/kdewebkit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0ac9553..f44d3e2 100644
+index 0ac9553..cfaec0e 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,16 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -14,10 +14,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets WebKitWidgets Network)
-+if(NOT BUILD_SHARED_LIBS)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent PrintSupport TextToSpeech Svg Sensors Positioning)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
-+endif()
 +
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -36,6 +46,16 @@ find_package(KF5JobWidgets ${KF5_DEP_VERSION} REQUIRED)
+ 
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent PrintSupport TextToSpeech Svg Sensors Positioning)
++    find_Qt5GuiExtras()
++endif()
+ 
+ include(GenerateExportHeader)
+ 
+@@ -36,6 +41,16 @@ find_package(KF5JobWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Wallet ${KF5_DEP_VERSION} REQUIRED)
@@ -3114,26 +3193,21 @@ echo ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
 patch -p1 -d ./source/frameworks/kxmlgui <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 6b2579a..2c054f3 100644
+index 6b2579a..419882a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -37,6 +37,15 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
+@@ -37,6 +37,10 @@ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt
  # Dependencies
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Widgets DBus Xml Network PrintSupport)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} REQUIRED)
-@@ -47,7 +56,14 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
+@@ -47,7 +51,14 @@ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
@@ -3154,16 +3228,25 @@ echo ./source/frameworks/kconfigwidgets
 git -C ./source/frameworks/kconfigwidgets checkout .
 patch -p1 -d ./source/frameworks/kconfigwidgets <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index a35cf3c..aadd3cd 100644
+index a35cf3c..da192ad 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -17,6 +17,10 @@ ecm_qt_declare_logging_category(kconfigwidgets_SRCS HEADER kconfigwidgets_debug.
+@@ -17,6 +17,19 @@ ecm_qt_declare_logging_category(kconfigwidgets_SRCS HEADER kconfigwidgets_debug.
  
  qt5_add_resources(kconfigwidgets_SRCS kconfigwidgets.qrc)
  
++find_package(X11)
 +if (X11_FOUND)
 +    add_library(Qt5X11Extras)
 +    add_library(Qt5::X11Extras ALIAS Qt5X11Extras)
++endif ()
++if(APPLE)
++    add_library(Qt5MacExtras)
++    add_library(Qt5::MacExtras ALIAS Qt5MacExtras)
++endif()
++if (WIN32)
++    add_library(Qt5WinExtras)
++    add_library(Qt5::WinExtras ALIAS Qt5WinExtras)
 +endif ()
  add_library(KF5ConfigWidgets ${kconfigwidgets_SRCS})
  generate_export_header(KF5ConfigWidgets BASE_NAME KConfigWidgets)
@@ -3173,26 +3256,21 @@ echo ./source/frameworks/kbookmarks
 git -C ./source/frameworks/kbookmarks checkout .
 patch -p1 -d ./source/frameworks/kbookmarks <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2d51e38..8e1314e 100644
+index 2d51e38..4ab9dbb 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -39,6 +39,15 @@ ecm_setup_version(PROJECT
+@@ -39,6 +39,10 @@ ecm_setup_version(PROJECT
  set(REQUIRED_QT_VERSION 5.9.0)
  
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Widgets Xml DBus)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Network PrintSupport Svg TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
-@@ -47,6 +56,21 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
+@@ -47,6 +51,22 @@ find_package(KF5ConfigWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
@@ -3204,6 +3282,7 @@ index 2d51e38..8e1314e 100644
 +    find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(X11)
 +    if (X11_FOUND)
 +        find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
 +    endif()
@@ -3219,23 +3298,18 @@ echo ./source/frameworks/kemoticons
 git -C ./source/frameworks/kemoticons checkout .
 patch -p1 -d ./source/frameworks/kemoticons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e10e741..c96edeb 100644
+index e10e741..005a7f0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_S
- 
- set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui DBus)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
- 
- include(KDEInstallDirs)
+@@ -19,6 +19,7 @@ include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
-@@ -39,6 +45,10 @@ find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
+ include(KDECMakeSettings)
+ 
++find_Qt5GuiExtras()
+ 
+ include(GenerateExportHeader)
+ include(ECMSetupVersion)
+@@ -39,6 +40,10 @@ find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5CoreAddons ${KF5_DEP_VERSION} REQUIRED)
@@ -3264,28 +3338,36 @@ echo ./source/frameworks/kcrash
 git -C ./source/frameworks/kcrash checkout .
 patch -p1 -d ./source/frameworks/kcrash <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f13c283..296f069 100644
+index f13c283..3e55cc8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,6 +13,12 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -23,6 +23,7 @@ endif()
  
- set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
- include(KDEInstallDirs)
- include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
- include(KDECMakeSettings)
+ set(HAVE_X11 ${X11_FOUND})
+ 
++find_Qt5GuiExtras()
+ 
+ include(GenerateExportHeader)
+ include(ECMSetupVersion)
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 7a382dd..386dc54 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -20,7 +20,7 @@ target_link_libraries(KF5Crash PUBLIC Qt5::Core)
+ target_link_libraries(KF5Crash PRIVATE KF5::CoreAddons KF5::WindowSystem)
+ 
+ 
+-if(${X11_FOUND})
++if(X11_FOUND)
+   find_package(Qt5X11Extras ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE)
+   target_link_libraries(KF5Crash PRIVATE Qt5::X11Extras ${X11_LIBRARIES})
+   target_include_directories(KF5Crash PRIVATE ${X11_X11_INCLUDE_PATH})
 EOF
 echo ./source/frameworks/qqc2-desktop-style
 git -C ./source/frameworks/qqc2-desktop-style checkout .
 patch -p1 -d ./source/frameworks/qqc2-desktop-style <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 602d94a..d3f0b63 100644
+index 602d94a..acdfc66 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -33,8 +33,14 @@ include(KDECMakeSettings)
@@ -3299,10 +3381,19 @@ index 602d94a..d3f0b63 100644
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Kirigami2)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS Archive GuiAddons I18n ItemViews)
-+endi()
++endif()
  
  find_package(KF5 ${KF5_DEP_VERSION} COMPONENTS
                  IconThemes #KIconLoader
+@@ -48,6 +54,8 @@ endif()
+ # When building as a static plugin, dependencies may add a -lQt5X11Extras
+ # to the linker, in that case, it requires to have the proper variables
+ # to exists.
++find_Qt5GuiExtras()
++
+ if(X11_FOUND)
+     find_package(Qt5X11Extras ${REQUIRED_QT_VERSION} NO_MODULE QUIET)
+ endif()
 diff --git a/kirigami-plasmadesktop-integration/CMakeLists.txt b/kirigami-plasmadesktop-integration/CMakeLists.txt
 index b977752..9df8d63 100644
 --- a/kirigami-plasmadesktop-integration/CMakeLists.txt
@@ -3365,27 +3456,22 @@ echo ./source/frameworks/purpose
 git -C ./source/frameworks/purpose checkout .
 patch -p1 -d ./source/frameworks/purpose <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a645350..83a8613 100644
+index a645350..c8746a0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -8,6 +8,16 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
- 
- set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Qml Gui DBus Widgets Network Test)
-+if(NOT BUILD_SHARED_LIBS)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
-+endif()
-+
- include(KDEInstallDirs)
+@@ -12,6 +12,11 @@ include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -26,6 +36,9 @@ set(KF5_VERSION "5.54.0") # handled by release scripts
+ 
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Svg)
++    find_Qt5GuiExtras()
++endif()
++
+ include(FeatureSummary)
+ include(GenerateExportHeader)
+ 
+@@ -26,6 +31,9 @@ set(KF5_VERSION "5.54.0") # handled by release scripts
  set(KF5_DEP_VERSION "5.54.0") # handled by release scripts
  
  find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons I18n Config)
@@ -3477,27 +3563,22 @@ echo ./source/frameworks/kross
 git -C ./source/frameworks/kross checkout .
 patch -p1 -d ./source/frameworks/kross <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b480079..3620300 100644
+index b480079..72f3f23 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -31,7 +31,15 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KROSS
+@@ -31,7 +31,10 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX KROSS
  
  set(REQUIRED_QT_VERSION 5.9.0)
  find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Script Xml Widgets UiTools)
 -
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent PrintSupport Svg TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
  
  find_package(Qt5Test ${REQUIRED_QT_VERSION} CONFIG QUIET)
  set_package_properties(Qt5Test PROPERTIES
-@@ -52,6 +60,15 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
+@@ -52,6 +55,15 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5DocTools ${KF5_DEP_VERSION})
@@ -3608,26 +3689,22 @@ echo ./source/frameworks/kparts
 git -C ./source/frameworks/kparts checkout .
 patch -p1 -d ./source/frameworks/kparts <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 46fec75..7b0b75b 100644
+index 46fec75..4848812 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,6 +14,15 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+@@ -20,6 +20,11 @@ include(KDECMakeSettings)
+ include(KDEPackageAppTemplates)
+ include(ECMAddQch)
  
- set(REQUIRED_QT_VERSION 5.9.0)
- find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Core Widgets Xml)
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Concurrent Svg PrintSupport TextToSpeech)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
++    find_Qt5GuiExtras()
 +endif()
- include(KDEInstallDirs)
- include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
- include(KDECMakeSettings)
-@@ -42,6 +51,17 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
++
+ include(GenerateExportHeader)
+ 
+ include(ECMSetupVersion)
+@@ -42,6 +47,18 @@ find_package(KF5Service ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5TextWidgets ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5XmlGui ${KF5_DEP_VERSION} REQUIRED)
@@ -3637,6 +3714,7 @@ index 46fec75..7b0b75b 100644
 +    find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
++    find_package(X11)
 +    if (X11_FOUND)
 +        find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
 +    endif ()
@@ -3683,26 +3761,27 @@ echo ./source/frameworks/kdeclarative
 git -C ./source/frameworks/kdeclarative checkout .
 patch -p1 -d ./source/frameworks/kdeclarative <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 63887e5..2ae3463 100644
+index 63887e5..44e8757 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -15,6 +15,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ECM_MODULE_PATH} ${ECM
+@@ -15,10 +15,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${ECM_MODULE_PATH} ${ECM
  set(REQUIRED_QT_VERSION 5.9.0)
  
  find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Qml Quick Gui)
-+if(NOT BUILD_SHARED_LIBS)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent Svg)
-+    if (X11_FOUND)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+    endif ()
-+    if (WIN32)
-+        find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+    endif ()
-+endif()
++
  include(KDEInstallDirs)
  include(KDEFrameworkCompilerSettings NO_POLICY_SCOPE)
  include(KDECMakeSettings)
-@@ -28,6 +37,11 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
+ 
++if(NOT BUILD_SHARED_LIBS)
++    find_package(Qt5 ${REQUIRED_QT_VERSION} NO_MODULE REQUIRED Concurrent Svg)
++    find_Qt5GuiExtras()
++endif()
++
+ find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5I18n ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
+@@ -28,6 +34,11 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5GlobalAccel ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5GuiAddons ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Package ${KF5_DEP_VERSION} REQUIRED)
@@ -3854,23 +3933,10 @@ echo ./source/frameworks/kpeople
 git -C ./source/frameworks/kpeople checkout .
 patch -p1 -d ./source/frameworks/kpeople <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8048588..2b3cf3f 100644
+index 8048588..ab71afc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,12 +14,22 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
- set(REQUIRED_QT_VERSION 5.9.0)
- 
- find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui Sql DBus Widgets Qml)
-+if (X11_FOUND)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED X11Extras)
-+endif ()
-+if (WIN32)
-+    find_package(Qt5 ${REQUIRED_QT_VERSION} CONFIG REQUIRED WinExtras)
-+endif ()
-+
- 
- find_package(KF5CoreAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
- find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
+@@ -20,6 +20,9 @@ find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5I18n ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5ItemViews ${KF5_DEP_VERSION} CONFIG REQUIRED)
  find_package(KF5Service ${KF5_DEP_VERSION} CONFIG REQUIRED)
@@ -3880,6 +3946,15 @@ index 8048588..2b3cf3f 100644
  
  include(ECMSetupVersion)
  include(ECMGenerateHeaders)
+@@ -35,6 +38,8 @@ include(ECMQtDeclareLoggingCategory)
+ include(KDEInstallDirs)
+ include(KDECMakeSettings)
+ 
++find_Qt5GuiExtras()
++
+ option(BUILD_QCH "Build API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)" OFF)
+ add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)")
+ 
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
 index 6558616..492e3eb 100644
 --- a/src/declarative/CMakeLists.txt
