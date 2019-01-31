@@ -70,7 +70,7 @@ index 52d50cf8..c5c0597c 100644
 -#  endif
 -# endif
 -#endif
-+if(BUILD_SHARED_LIBS)
++ifdef BUILD_SHARED_LIBS
 + ifndef PHONON_EXPORT
 +  if defined Q_WS_WIN
 +   ifdef MAKE_PHONON_LIB /* We are building this library */
@@ -2430,7 +2430,7 @@ diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.c
 index 3f7f5a8..91698c4 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
-@@ -174,6 +174,17 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
+@@ -174,6 +174,19 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
  
  endif()
  
@@ -2440,10 +2440,12 @@ index 3f7f5a8..91698c4 100644
 +    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")   # For GNU compilers, what about MSVC?
 +    set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ${KDE_STANDARD_LIBRARIES} $ENV{KDE_STANDARD_LIBRARIES}")
 +    set(MODULE "STATIC")
-+    add_definitions(-DBUILD_SHARED_LIBS)
 +else()
 +    set(MODULE "MODULE")
++    add_definitions(-DBUILD_SHARED_LIBS)
 +endif()
++
++FIND_PACKAGE(X11)
 +
  ################ Testing setup ####################################
  

@@ -13,15 +13,8 @@ ENV ftp_proxy http://172.17.0.1:3128
 ENV http_proxy http://172.17.0.1:3128
 ENV https_proxy http://172.17.0.1:3128
 
-# Create kdedev user
-RUN xbps-install --yes sudo && echo 'kdedev ALL=NOPASSWD: ALL' >> /etc/sudoers && echo 'Defaults env_keep += "ftp_proxy http_proxy https_proxy"' >> /etc/sudoers
-RUN useradd kdedev
-USER kdedev
-WORKDIR /home/kdedev
-CMD bash
-
 # Get voidlinux ready for building
-RUN sudo xbps-install --yes xtools
+RUN xbps-install --yes xtools
 RUN git clone --depth 1 https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
 RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
 	./xbps-src binary-bootstrap

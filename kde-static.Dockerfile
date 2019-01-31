@@ -63,9 +63,11 @@ RUN cd void-packages && ./xbps-src pkg libglapi # Fails with -j4
 RUN cd void-packages && ./xbps-src pkg -j4 libllvm7
 RUN cd void-packages && ./xbps-src pkg     poppler-devel
 RUN cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel
+RUN cd void-packages && ./xbps-src pkg -j4 wayland
+RUN cd void-packages && ./xbps-src pkg -j4 qrencode
 
 # Install built packages
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel wayland qrencode
 
 # Download, patch and build QT everywhere, QT webkit and friends, then delete sources
 RUN sudo xbps-install -y wget xz libaccounts-glib-devel doxygen
@@ -106,29 +108,18 @@ ENV PATH /home/kdedev/qt-everywhere-5.11.3/bin:$PATH
 RUN sudo xbps-install -y git perl-YAML-LibYAML
 RUN git clone git://anongit.kde.org/kdesrc-build.git
 
-# Download KDE sources
-RUN mkdir kde
-COPY kdesrc-buildrc-sources       kde
-COPY kf5-frameworks-build-include kde
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies okular
-# Need kholidays or patch will fail
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only kholidays
-ADD $HOME/src/okular-static.cache/kde .
-
-# Patch KDE sources
-COPY patch-kde.sh kde
-RUN cd kde && sh patch-kde.sh
-
-# Prepare the KDE build
-COPY kdesrc-buildrc-static kde/kdesrc-buildrc
-
 # Make empty library since build process will try to link with it
 RUN sudo sh -c "echo \!\<arch\> > /usr/lib/libgcc_s.a"
 
-# RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
-
 # Install some fonts
 RUN sudo xbps-install --yes dejavu-fonts-ttf
+
+# Prepare the KDE build
+RUN mkdir kde
+COPY patch-kde.sh kde
+COPY kdesrc-buildrc-static kde/kdesrc-buildrc
+COPY kdesrc-buildrc-sources       kde
+COPY kf5-frameworks-build-include kde
 
 # And some useful stuff for later on
 COPY build-git-patch kde
@@ -138,3 +129,12 @@ COPY .bashrc /home/kdedev
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
 COPY authorized_keys /home/kdedev/.ssh
+
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies okular
+# Need kholidays or patch will fail
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only kholidays
+
+# ADD /home/jschultz/src/okular-static.cache/kde .
+# RUN cd kde && sh patch-kde.sh
+
+# RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
