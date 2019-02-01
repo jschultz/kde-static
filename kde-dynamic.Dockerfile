@@ -90,10 +90,6 @@ RUN sudo xbps-install --yes dejavu-fonts-ttf
 
 # Prepare the KDE build
 RUN mkdir kde
-COPY patch-kde.sh kde
-COPY kdesrc-buildrc-dynamic kde/kdesrc-buildrc
-COPY kdesrc-buildrc-sources       kde
-COPY kf5-frameworks-build-include kde
 
 # And some useful stuff for later on
 COPY build-git-patch kde
@@ -104,11 +100,6 @@ RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
 COPY authorized_keys /home/kdedev/.ssh
 
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies okular
-# Need kholidays or patch will fail
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only kholidays
-
-# ADD /home/jschultz/src/okular-static.cache/kde .
-# RUN cd kde && sh patch-kde.sh
-
-# RUN ~/kdesrc-build/kdesrc-build --rc-file=$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies okular; exit 0
+# Get KDE sources - moved to script to avoid constantly downloading them
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies frameworks
+# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --includeokular

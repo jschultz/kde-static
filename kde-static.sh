@@ -18,7 +18,14 @@ docker create --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
               --name=kde-static --hostname=kde-static \
               voidlinux/kde-static
 
+# Prepare the KDE build
 docker cp $HOME/src/okular-static.cache/kde/source kde-static:/home/kdedev/kde
+docker cp patch-kde.sh                  kde-static:/home/kdedev/kde
+docker cp kdesrc-buildrc-static         kde-static:/home/kdedev/kde/kdesrc-buildrc
+docker cp kdesrc-buildrc-sources        kde-static:/home/kdedev/kde
+docker cp kf5-frameworks-build-include  kde-static:/home/kdedev/kde
+
 docker start kde-static
+
 docker exec kde-static sh -c "cd kde && sh patch-kde.sh"
-docker exec kde-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build frameworks"
+docker exec kde-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"

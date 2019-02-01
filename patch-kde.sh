@@ -307,7 +307,7 @@ index 0caea358a..6311b2ec0 100644
 +#cmakedefine01 HAVE_X11
 +
 diff --git a/core/document.cpp b/core/document.cpp
-index 3332c3a89..f3d95bcc4 100644
+index 3332c3a89..08a8fd067 100644
 --- a/core/document.cpp
 +++ b/core/document.cpp
 @@ -45,6 +45,9 @@
@@ -350,7 +350,7 @@ index 3332c3a89..f3d95bcc4 100644
      static QVector<KPluginMetaData> result;
      if (result.isEmpty())
      {
-+#ifndef BUILD_SHARED_LIBS
++#ifdef BUILD_SHARED_LIBS
          result = KPluginLoader::findPlugins( QLatin1String ( "okular/generators" ) );
 +#else
 +        result = s_availableGenerators;
@@ -554,7 +554,7 @@ index 983690d08..df128a2de 100644
  {
      QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 diff --git a/shell/shell.cpp b/shell/shell.cpp
-index d3f0b3e49..9cd41d0e3 100644
+index d3f0b3e49..29719b344 100644
 --- a/shell/shell.cpp
 +++ b/shell/shell.cpp
 @@ -53,6 +53,10 @@
@@ -568,7 +568,7 @@ index d3f0b3e49..9cd41d0e3 100644
  // local includes
  #include "kdocumentviewer.h"
  #include "../interfaces/viewerinterface.h"
-@@ -79,19 +83,29 @@ Shell::Shell( const QString &serializedOptions )
+@@ -79,19 +83,31 @@ Shell::Shell( const QString &serializedOptions )
    setXMLFile(QStringLiteral("shell.rc"));
    m_fileformatsscanned = false;
    m_showMenuBarAction = nullptr;
@@ -594,7 +594,9 @@ index d3f0b3e49..9cd41d0e3 100644
 +#endif
      return;
    }
++#ifndef BUILD_SHARED_LIBS
 +  m_partFactory->registerPlugin<Okular::Part>();
++#endif
  
    // now that the Part plugin is loaded, create the part
    KParts::ReadWritePart* const firstPart = m_partFactory->create< KParts::ReadWritePart >( this );
@@ -2377,7 +2379,7 @@ echo ./source/frameworks/ktexteditor
 git -C ./source/frameworks/ktexteditor checkout .
 patch -p1 -d ./source/frameworks/ktexteditor <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index fe588b7b..bab4d977 100644
+index fe588b7b..2cf2b5d0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -43,6 +43,10 @@ set(REQUIRED_QT_VERSION 5.9.0)
@@ -2391,13 +2393,11 @@ index fe588b7b..bab4d977 100644
  
  find_package(KF5Archive ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
-@@ -52,7 +56,14 @@ find_package(KF5KIO ${KF5_DEP_VERSION} REQUIRED)
- find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
+@@ -53,6 +57,13 @@ find_package(KF5Parts ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5Sonnet ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5IconThemes ${KF5_DEP_VERSION} REQUIRED)
--find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
+ find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
 +if(NOT BUILD_SHARED_LIBS)
-+    find_package(KF5SyntaxHighlighting ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
 +    find_package(KF5Attica ${KF5_DEP_VERSION} REQUIRED)
@@ -3133,18 +3133,6 @@ EOF
 echo ./source/frameworks/bluez-qt
 git -C ./source/frameworks/bluez-qt checkout .
 patch -p1 -d ./source/frameworks/bluez-qt <<'EOF'
-diff --git a/autotests/CMakeLists.txt b/autotests/CMakeLists.txt
-index 888978f..28294ea 100644
---- a/autotests/CMakeLists.txt
-+++ b/autotests/CMakeLists.txt
-@@ -36,6 +36,6 @@ bluezqt_tests(
- 
- if(Qt5Qml_FOUND AND Qt5QuickTest_FOUND)
-     bluezqt_tests(qmltests)
--    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest)
-+    target_link_libraries(qmltests Qt5::Qml Qt5::QuickTest Qt5::Quick Qt5::QmlDebug)
-     add_definitions(-DBLUEZQT_QML_IMPORT_PATH="${CMAKE_CURRENT_BINARY_DIR}/../src/imports")
- endif()
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
 index 59668a5..38d3e59 100644
 --- a/src/imports/CMakeLists.txt
@@ -3642,48 +3630,6 @@ index 93d3bd9..f2ee6be 100644
  target_link_libraries(krossqtsplugin
      KF5::I18n
      KF5::KrossCore
-EOF
-echo ./source/frameworks/kwayland
-git -C ./source/frameworks/kwayland checkout .
-patch -p1 -d ./source/frameworks/kwayland <<'EOF'
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3cb3311..656a734 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -41,6 +41,7 @@ set_package_properties(Wayland PROPERTIES
- find_package(WaylandScanner)
- 
- find_package(EGL)
-+message("EGL_LIBRARIES ${EGL_LIBRARIES}")
- set_package_properties(EGL PROPERTIES TYPE REQUIRED)
- 
- include(KDEInstallDirs)
-diff --git a/src/client/CMakeLists.txt b/src/client/CMakeLists.txt
-index 2d7e73b..98f019e 100644
---- a/src/client/CMakeLists.txt
-+++ b/src/client/CMakeLists.txt
-@@ -225,7 +225,7 @@ ecm_add_wayland_client_protocol(CLIENT_LIB_SRCS
-     BASENAME remote-access
- )
- 
--add_library(KF5WaylandClient ${CLIENT_LIB_SRCS})
-+add_library(KF5WaylandClient ${MODULE} ${CLIENT_LIB_SRCS})
- generate_export_header(KF5WaylandClient
-     BASE_NAME
-         KWaylandClient
-diff --git a/src/server/CMakeLists.txt b/src/server/CMakeLists.txt
-index 7566ef3..1d9d8f3 100644
---- a/src/server/CMakeLists.txt
-+++ b/src/server/CMakeLists.txt
-@@ -261,7 +261,7 @@ set(SERVER_GENERATED_SRCS
- 
- set_source_files_properties(${SERVER_GENERATED_SRCS} PROPERTIES SKIP_AUTOMOC ON)
- 
--add_library(KF5WaylandServer ${SERVER_LIB_SRCS})
-+add_library(KF5WaylandServer ${MODULE} ${SERVER_LIB_SRCS})
- generate_export_header(KF5WaylandServer
-     BASE_NAME
-         KWaylandServer
 EOF
 echo ./source/frameworks/kparts
 git -C ./source/frameworks/kparts checkout .
