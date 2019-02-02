@@ -475,7 +475,7 @@ index 2de7e1835..f4ee4aedc 100644
  class QTextDocument;
  
 diff --git a/generators/poppler/generator_pdf.h b/generators/poppler/generator_pdf.h
-index 4439a1144..46c41a71e 100644
+index 4439a1144..1ce7bf614 100644
 --- a/generators/poppler/generator_pdf.h
 +++ b/generators/poppler/generator_pdf.h
 @@ -16,7 +16,7 @@
@@ -483,7 +483,7 @@ index 4439a1144..46c41a71e 100644
  //#include "synctex/synctex_parser.h"
  
 -#include <poppler-qt5.h>
-+#include </usr/include/poppler/qt5/poppler-qt5.h>
++#include <poppler/qt5/poppler-qt5.h>
  
  
  #include <qbitarray.h>
@@ -1065,9 +1065,18 @@ index 313f631..a7788f2 100644
  if (NOT WIN32)
  find_package(Libcap)
 diff --git a/KF5InitMacros.cmake b/KF5InitMacros.cmake
-index 834e2be..e5c57a7 100644
+index 834e2be..a13f5e3 100644
 --- a/KF5InitMacros.cmake
 +++ b/KF5InitMacros.cmake
+@@ -5,7 +5,7 @@ macro(_FIND_KDEINIT_FILE OUTPUT_VAR INFIX)
+     if(KInit_SOURCE_DIR)
+         set(${OUTPUT_VAR} "${KInit_SOURCE_DIR}/${_KDE5INIT_DUMMY_FILENAME}")
+     else()
+-        find_file(${OUTPUT_VAR} NAMES ${_KDE5INIT_DUMMY_FILENAME} HINTS ${_KINITDIR})
++        find_file(${OUTPUT_VAR} NAMES ${_KDE5INIT_DUMMY_FILENAME} HINTS ${_KINITDIR} NO_CMAKE_FIND_ROOT_PATH)
+     endif()
+ endmacro()
+ 
 @@ -33,7 +33,7 @@ function (KF5_ADD_KDEINIT_EXECUTABLE _target_NAME )
          add_library(kdeinit_${_target_NAME} STATIC ${_SRCS})
      else()
@@ -1659,6 +1668,21 @@ EOF
 echo ./source/frameworks/kjs
 git -C ./source/frameworks/kjs checkout .
 patch -p1 -d ./source/frameworks/kjs <<'EOF'
+diff --git a/src/kjs/CMakeLists.txt b/src/kjs/CMakeLists.txt
+index a51a71d..b604532 100644
+--- a/src/kjs/CMakeLists.txt
++++ b/src/kjs/CMakeLists.txt
+@@ -71,7 +71,9 @@ endif()
+    # get the name of the generated wrapper script (which sets up LD_LIBRARY_PATH)
+    #get_target_property(ICEMAKER_EXECUTABLE icemaker WRAPPER_SCRIPT)
+    #get_target_property(ICEMAKER_EXECUTABLE_DIR icemaker RUNTIME_OUTPUT_DIRECTORY)
+-   set(ICEMAKER_EXECUTABLE icemaker)
++   if (NOT ICEMAKER_EXECUTABLE)
++      set(ICEMAKER_EXECUTABLE icemaker)
++   endif()
+ 
+ #    export(TARGETS icemaker FILE ${CMAKE_BINARY_DIR}/ImportIcemakerExecutable.cmake)
+ # endif ()
 diff --git a/src/wtf/CMakeLists.txt b/src/wtf/CMakeLists.txt
 index c05f7a4..f1ec9c8 100644
 --- a/src/wtf/CMakeLists.txt
@@ -2159,24 +2183,26 @@ echo ./source/frameworks/syntax-highlighting
 git -C ./source/frameworks/syntax-highlighting checkout .
 patch -p1 -d ./source/frameworks/syntax-highlighting <<'EOF'
 diff --git a/examples/CMakeLists.txt b/examples/CMakeLists.txt
-index 652b72c..534e7df 100644
+index 652b72c..ad069ed 100644
 --- a/examples/CMakeLists.txt
 +++ b/examples/CMakeLists.txt
-@@ -1,4 +1,4 @@
+@@ -1,4 +1,5 @@
  if(Qt5Widgets_FOUND)
      add_executable(codeeditor codeeditor.cpp main.cpp)
 -    target_link_libraries(codeeditor Qt5::Widgets KF5SyntaxHighlighting)
-+    target_link_libraries(codeeditor PRIVATE Qt5::Widgets KF5SyntaxHighlighting SyntaxHighlightingData)
++#     target_link_libraries(codeeditor PRIVATE Qt5::Widgets KF5SyntaxHighlighting SyntaxHighlightingData)
++    target_link_libraries(codeeditor PRIVATE Qt5::Widgets KF5SyntaxHighlighting)
  endif()
 diff --git a/src/cli/CMakeLists.txt b/src/cli/CMakeLists.txt
-index 1131153..7796870 100644
+index 1131153..37eaa5d 100644
 --- a/src/cli/CMakeLists.txt
 +++ b/src/cli/CMakeLists.txt
-@@ -1,5 +1,5 @@
+@@ -1,5 +1,6 @@
  add_executable(kate-syntax-highlighter kate-syntax-highlighter.cpp)
  ecm_mark_nongui_executable(kate-syntax-highlighter)
 -target_link_libraries(kate-syntax-highlighter KF5SyntaxHighlighting)
-+target_link_libraries(kate-syntax-highlighter PRIVATE KF5SyntaxHighlighting SyntaxHighlightingData)
++# target_link_libraries(kate-syntax-highlighter PRIVATE KF5SyntaxHighlighting SyntaxHighlightingData)
++target_link_libraries(kate-syntax-highlighter PRIVATE KF5SyntaxHighlighting)
  
  install(TARGETS kate-syntax-highlighter ${INSTALL_TARGETS_DEFAULT_ARGS})
 EOF
@@ -3150,8 +3176,24 @@ EOF
 echo ./source/frameworks/kdoctools
 git -C ./source/frameworks/kdoctools checkout .
 patch -p1 -d ./source/frameworks/kdoctools <<'EOF'
+diff --git a/KF5DocToolsMacros.cmake b/KF5DocToolsMacros.cmake
+index 88a2b3e..e6b01b4 100644
+--- a/KF5DocToolsMacros.cmake
++++ b/KF5DocToolsMacros.cmake
+@@ -84,6 +84,11 @@
+ 
+ set(KDOCTOOLS_SERIALIZE_TOOL "" CACHE STRING "Tool to serialize resource-intensive commands in parallel builds")
+ set(KDOCTOOLS_MEINPROC_EXECUTABLE "KF5::meinproc5")
++if(CMAKE_CROSSCOMPILING AND MEINPROC5_EXECUTABLE)
++    set(KDOCTOOLS_MEINPROC_EXECUTABLE ${MEINPROC5_EXECUTABLE})
++else()
++    set(KDOCTOOLS_MEINPROC_EXECUTABLE "KF5::meinproc5")
++endif()
+ 
+ if(KDOCTOOLS_SERIALIZE_TOOL)
+     # parallel build with many meinproc invocations can consume a huge amount of memory
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 24f75a4..68c88ef 100644
+index 24f75a4..9a3cf7d 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -34,7 +34,7 @@ ecm_qt_declare_logging_category(kdoctoolslog_core_SRCS
@@ -3176,6 +3218,15 @@ index 24f75a4..68c88ef 100644
  endif()
  
  add_executable(meinproc5 meinproc.cpp meinproc_common.cpp xslt.cpp ${meinproc_additional_SRCS} ${kdoctoolslog_core_SRCS})
+@@ -205,7 +209,7 @@ set( docbookl10nhelper_SRCS docbookl10nhelper.cpp ${kdoctoolslog_core_SRCS})
+ add_executable( docbookl10nhelper ${docbookl10nhelper_SRCS} )
+ ecm_mark_nongui_executable( docbookl10nhelper )
+ target_link_libraries( docbookl10nhelper Qt5::Core )
+-if(INSTALL_INTERNAL_TOOLS)
++if(INSTALL_INTERNAL_TOOLS OR (CMAKE_CROSSCOMPILING AND MEINPROC5_EXECUTABLE))
+     install(TARGETS docbookl10nhelper EXPORT KF5DocToolsTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
+ endif()
+ 
 EOF
 echo ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
@@ -3409,6 +3460,46 @@ index 90bbaea..20cbf16 100644
  
  if(KF5ConfigWidgets_FOUND)
 EOF
+echo ./source/frameworks/kconfig
+git -C ./source/frameworks/kconfig checkout .
+patch -p1 -d ./source/frameworks/kconfig <<'EOF'
+diff --git a/KF5ConfigMacros.cmake b/KF5ConfigMacros.cmake
+index b12723f..6258673 100644
+--- a/KF5ConfigMacros.cmake
++++ b/KF5ConfigMacros.cmake
+@@ -88,9 +88,15 @@ function (KCONFIG_ADD_KCFG_FILES _sources )
+            file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${_rel_PATH})
+        endif()
+ 
++       if(CMAKE_CROSSCOMPILING AND KCONFIG_COMPILER_KF5_EXECUTABLE)
++           set(KCONFIG_COMPILER_KF5_LOCATION ${KCONFIG_COMPILER_KF5_EXECUTABLE})
++       else()
++           get_target_property(KCONFIG_COMPILER_KF5_LOCATION KF5::kconfig_compiler LOCATION)
++       endif()
++       
+        # the command for creating the source file from the kcfg file
+        add_custom_command(OUTPUT ${_header_FILE} ${_src_FILE}
+-                          COMMAND KF5::kconfig_compiler
++                          COMMAND ${KCONFIG_COMPILER_KF5_LOCATION}
+                           ARGS ${_kcfg_FILE} ${_tmp_FILE} -d ${CMAKE_CURRENT_BINARY_DIR}/${_rel_PATH}
+                           MAIN_DEPENDENCY ${_tmp_FILE}
+                           DEPENDS ${_kcfg_FILE})
+diff --git a/src/kconfig_compiler/CMakeLists.txt b/src/kconfig_compiler/CMakeLists.txt
+index dc0a08d..be7e6aa 100644
+--- a/src/kconfig_compiler/CMakeLists.txt
++++ b/src/kconfig_compiler/CMakeLists.txt
+@@ -12,6 +12,10 @@ if(CMAKE_TOOLCHAIN_FILE)
+     if(BUILD_TESTING)
+         message(WARNING "Testing should be disabled on cross-compilation")
+     endif()
++    if (KCONFIG_COMPILER_KF5_EXECUTABLE)
++        add_executable(KF5::kconfig_compiler IMPORTED GLOBAL)
++        set_target_properties(KF5::kconfig_compiler PROPERTIES IMPORTED_LOCATION ${KCONFIG_COMPILER_KF5_EXECUTABLE} ALIAS kconfig_compiler)
++    endif()
+ else()
+     add_executable(KF5::kconfig_compiler ALIAS kconfig_compiler)
+ endif()
+EOF
 echo ./source/frameworks/networkmanager-qt
 git -C ./source/frameworks/networkmanager-qt checkout .
 patch -p1 -d ./source/frameworks/networkmanager-qt <<'EOF'
@@ -3500,10 +3591,36 @@ echo ./source/frameworks/kcoreaddons
 git -C ./source/frameworks/kcoreaddons checkout .
 patch -p1 -d ./source/frameworks/kcoreaddons <<'EOF'
 diff --git a/KF5CoreAddonsMacros.cmake b/KF5CoreAddonsMacros.cmake
-index d7cc464..f52fb94 100644
+index d7cc464..ada8bc8 100644
 --- a/KF5CoreAddonsMacros.cmake
 +++ b/KF5CoreAddonsMacros.cmake
-@@ -121,7 +121,7 @@ function(kcoreaddons_add_plugin plugin)
+@@ -45,7 +45,11 @@ function(kcoreaddons_desktop_to_json target desktop)
+         _desktop_to_json_cmake28(${desktop} ${json} ${DESKTOP_TO_JSON_COMPAT_MODE})
+         return()
+     endif()
+-    set(command KF5::desktoptojson -i ${desktop} -o ${json})
++    if(CMAKE_CROSSCOMPILING AND DESKTOPTOJSON_EXECUTABLE)
++        set(command ${DESKTOPTOJSON_EXECUTABLE} -i ${desktop} -o ${json})
++    else()
++        set(command KF5::desktoptojson -i ${desktop} -o ${json})
++    endif()
+     if(DESKTOP_TO_JSON_COMPAT_MODE)
+       list(APPEND command -c)
+     endif()
+@@ -75,7 +79,11 @@ function(_desktop_to_json_cmake28 desktop json compat)
+     # generated before moc is run, and there was no way until CMake 3.0.0 to
+     # define a target as a dependency of the automoc target.
+     message("Using CMake 2.8 way to call desktoptojson")
+-    get_target_property(DESKTOPTOJSON_LOCATION KF5::desktoptojson LOCATION)
++    if(CMAKE_CROSSCOMPILING AND DESKTOPTOJSON_EXECUTABLE)
++        set(DESKTOPTOJSON_LOCATION ${DESKTOPTOJSON_EXECUTABLE})
++    else()
++        get_target_property(DESKTOPTOJSON_LOCATION KF5::desktoptojson LOCATION)
++    endif()
+     if(compat)
+         execute_process(
+             COMMAND ${DESKTOPTOJSON_LOCATION} -i ${desktop} -o ${json} -c
+@@ -121,7 +129,7 @@ function(kcoreaddons_add_plugin plugin)
      endif()
      get_filename_component(json "${KCA_ADD_PLUGIN_JSON}" REALPATH)
  
@@ -3525,6 +3642,20 @@ index 0cf99e6..3435678 100644
      ecm_mark_as_test(${pname})
      target_link_libraries(${pname} KF5::CoreAddons)
  endmacro()
+diff --git a/src/desktoptojson/CMakeLists.txt b/src/desktoptojson/CMakeLists.txt
+index dd668a4..c7d3867 100644
+--- a/src/desktoptojson/CMakeLists.txt
++++ b/src/desktoptojson/CMakeLists.txt
+@@ -4,6 +4,9 @@ add_executable(desktoptojson main.cpp desktoptojson.cpp
+  ../lib/plugin/desktopfileparser.cpp)
+ if(NOT CMAKE_TOOLCHAIN_FILE)
+     add_executable(KF5::desktoptojson ALIAS desktoptojson)
++elseif (DESKTOPTOJSON_EXECUTABLE)
++    add_executable(KF5::desktoptojson IMPORTED GLOBAL)
++    set_target_properties(KF5::desktoptojson PROPERTIES IMPORTED_LOCATION ${DESKTOPTOJSON_EXECUTABLE} ALIAS desktoptojson)
+ endif()
+ 
+ # Mark it as non-gui so we won't create an app bundle on Mac OS X
 diff --git a/src/lib/plugin/kpluginfactory.h b/src/lib/plugin/kpluginfactory.h
 index 811b07f..e721a15 100644
 --- a/src/lib/plugin/kpluginfactory.h

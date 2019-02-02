@@ -20,7 +20,7 @@ USER kdedev
 WORKDIR /home/kdedev
 CMD bash
 
-# Get voidlinux ready for building
+# Get voidlinux ready for building - THIS CAN GO!
 RUN sudo xbps-install --yes xtools
 RUN git clone --depth 1 https://github.com/jschultz/void-packages
 RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
@@ -54,11 +54,23 @@ RUN sudo xbps-install --yes \
     xz
 
 # Install MXE cross-building environment
-RUN git clone --depth 1 https://github.com/mxe/mxe.git
+RUN git clone --depth 1 https://github.com/jschultz/mxe.git
 
-# Build Qt5
+# Build Qt5 and other packages we'll need
 RUN cd mxe && make qt5
-RUN cd mxe && make fontconfig dbus icu4c libxslt libgpg_error libxcb xcb-util-keysyms libxml2 libglapi libGL libEGL libGLES libOSMesa llvm poppler poppler-qt5
+RUN cd mxe && make fontconfig 
+RUN cd mxe && make dbus
+RUN cd mxe && make icu4c
+RUN cd mxe && make libxslt
+RUN cd mxe && make libgpg_error
+RUN cd mxe && make libxml2
+RUN cd mxe && make llvm
+RUN cd mxe && make poppler
+RUN cd mxe && make docbook-xml
+RUN cd mxe && make docbook-xsl
+RUN cd mxe && make boost
+RUN cd mxe && make giflib
+RUN cd mxe && make libqrencode
 
 # Update path
 ENV PATH /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/bin:/home/kdedev/mxe/usr/bin:$PATH
@@ -69,6 +81,11 @@ RUN ln -s /home/kdedev/mxe/usr/bin/i686-w64-mingw32.static-cmake /home/kdedev/mx
 # Install kdesrc-build
 RUN sudo xbps-install -y git perl-YAML-LibYAML
 RUN git clone git://anongit.kde.org/kdesrc-build.git
+
+RUN sudo xbps-install --yes ccache
+
+# Prepare the KDE build
+RUN mkdir kde
 
 # And some useful stuff for later on
 COPY build-git-patch kde

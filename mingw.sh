@@ -16,6 +16,9 @@ docker cp kdesrc-buildrc-mingw          kde-mingw-static:/home/kdedev/kde/kdesrc
 docker cp kdesrc-buildrc-sources        kde-mingw-static:/home/kdedev/kde
 docker cp kf5-frameworks-build-include  kde-mingw-static:/home/kdedev/kde
 
+# Prebuilt executables needed for cross-building
+docker cp hostapps kde-mingw-static:/home/kdedev
+
 docker start kde-mingw-static
 
 docker exec kde-mingw-static sh -c "cd kde && sh patch-kde.sh"
