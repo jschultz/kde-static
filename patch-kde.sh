@@ -88,16 +88,6 @@ index 52d50cf8..31376337 100644
  #endif
  
  #ifndef PHONON_DEPRECATED
-diff --git a/qt_phonon.pri b/qt_phonon.pri
-index 9936e8de..daf824f8 100644
---- a/qt_phonon.pri
-+++ b/qt_phonon.pri
-@@ -5,4 +5,4 @@
- # Consequently, we have to do some stunts to get values out of the cache.
- !exists($$_QMAKE_CACHE_)| \
-    !contains($$list($$fromfile($$_QMAKE_CACHE_, CONFIG)), QTDIR_build): \
--    QT_CONFIG += @PHONON_LIB_SONAME@
-+    QT_CONFIG += phonon
 EOF
 echo ./source/kdesupport/polkit-qt-1
 git -C ./source/kdesupport/polkit-qt-1 checkout .
@@ -196,15 +186,6 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 9584e4994..636467b28 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
- # KDE Application Version, managed by release script
- set (KDE_APPLICATIONS_VERSION_MAJOR "18")
- set (KDE_APPLICATIONS_VERSION_MINOR "12")
--set (KDE_APPLICATIONS_VERSION_MICRO "1")
-+set (KDE_APPLICATIONS_VERSION_MICRO "0")
- set (KDE_APPLICATIONS_VERSION "${KDE_APPLICATIONS_VERSION_MAJOR}.${KDE_APPLICATIONS_VERSION_MINOR}.${KDE_APPLICATIONS_VERSION_MICRO}")
- 
- project(okular VERSION 1.6.${KDE_APPLICATIONS_VERSION_MICRO})
 @@ -32,7 +32,20 @@ ecm_setup_version(${PROJECT_VERSION}
                    VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/core/version.h"
                    PACKAGE_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Okular5ConfigVersion.cmake")
@@ -383,14 +364,6 @@ index 37cad1f1d..cf307d88b 100644
  
  namespace Okular {
  
-@@ -215,6 +222,7 @@ class OKULARCORE_EXPORT Document : public QObject
-             OpenError,          //< The document failed to open
-             OpenNeedsPassword   //< The document needs a password to be opened or the one provided is not the correct
-         };
-+        
- 
-         /**
-          * Opens the document.
 diff --git a/core/synctex/synctex_parser_utils.c b/core/synctex/synctex_parser_utils.c
 index 70efcd716..3e3eb13eb 100644
 --- a/core/synctex/synctex_parser_utils.c
@@ -430,7 +403,7 @@ index 6feec81b3..ddaf40fe9 100644
 +
 +    install(TARGETS ${_target} EXPORT Okular5Targets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 +  endif()
-+  
++
  endfunction()
  
  set(LIBSPECTRE_MINIMUM_VERSION "0.2")
@@ -500,19 +473,6 @@ index f2529f78a..bd52e3770 100644
  set_target_properties(okularplugin PROPERTIES COMPILE_DEFINITIONS "okularpart_EXPORTS")
  target_link_libraries(okularplugin
          Qt5::Quick
-diff --git a/part.cpp b/part.cpp
-index 2866d3737..0c940cf96 100644
---- a/part.cpp
-+++ b/part.cpp
-@@ -2034,7 +2034,7 @@ bool Part::slotAttemptReload( bool oneShot, const QUrl &newUrl )
-     }
-     else if ( !oneShot )
-     {
--        // start watching the file again (since we dropped it on close) 
-+        // start watching the file again (since we dropped it on close)
-         setFileToWatch( localFilePath() );
-         m_dirtyHandler->start( 750 );
-     }
 diff --git a/shell/CMakeLists.txt b/shell/CMakeLists.txt
 index 628f74be1..26c08baec 100644
 --- a/shell/CMakeLists.txt
@@ -572,7 +532,7 @@ index d3f0b3e49..29719b344 100644
    setXMLFile(QStringLiteral("shell.rc"));
    m_fileformatsscanned = false;
    m_showMenuBarAction = nullptr;
-+  
++
 +#ifdef BUILD_SHARED_LIBS
    // this routine will find and load our Part.  it finds the Part by
    // name which is a bad idea usually.. but it's alright in this
@@ -1418,7 +1378,66 @@ index 103d763..f241f24 100644
  endif()
  
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 3e1c35a..1579831 100644
+index 3e1c35a..4cd9aef 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ project(kirigami)
+ 
+-if (NOT STATIC_LIBRARY)
++if (NOT STATIC_LIBRARY_FLAG)
+     ecm_create_qm_loader(kirigami_QM_LOADER libkirigakdedev@kde-static:~/kde/source/frameworks/kirigami$ git diff|cat
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 103d763..f241f24 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -17,13 +17,13 @@ endif()
+ 
+ option(BUILD_SHARED_LIBS "Build a shared module" ON)
+ option(DESKTOP_ENABLED "Build and install The Desktop style" ON)
+-option(STATIC_LIBRARY "Build as a static library (deprecated, use BUILD_SHARED_LIBS instead)" OFF)
++option(STATIC_LIBRARY_FLAG "Build as a static library (deprecated, use BUILD_SHARED_LIBS instead)" OFF)
+ option(BUILD_EXAMPLES "Build and install examples" OFF)
+ option(DISABLE_DBUS "Build without D-Bus support" OFF)
+ 
+ if(NOT BUILD_SHARED_LIBS)
+-    set(STATIC_LIBRARY 1)
+-elseif(STATIC_LIBRARY)
++    set(STATIC_LIBRARY_FLAG 1)
++elseif(STATIC_LIBRARY_FLAG)
+     set(BUILD_SHARED_LIBS 0)
+ endif()
+ 
+@@ -40,15 +40,15 @@ set(CMAKE_AUTOMOC ON)
+ set(AUTOMOC_MOC_OPTIONS -Muri=org.kde.kirigami)
+ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ 
+-if(STATIC_LIBRARY)
++if(STATIC_LIBRARY_FLAG)
+     add_definitions(-DKIRIGAMI_BUILD_TYPE_STATIC)
+     add_definitions(-DQT_PLUGIN)
+     add_definitions(-DQT_STATICPLUGIN=1)
+-else(STATIC_LIBRARY)
++else(STATIC_LIBRARY_FLAG)
+     if (BUILD_TESTING)
+         add_subdirectory(autotests)
+     endif()
+-endif(STATIC_LIBRARY)
++endif(STATIC_LIBRARY_FLAG)
+ 
+ ################# set KDE specific information #################
+ 
+@@ -120,7 +120,7 @@ ecm_find_qmlmodule(QtGraphicalEffects 1.0)
+ 
+ add_subdirectory(src)
+ 
+-if (BUILD_EXAMPLES AND NOT STATIC_LIBRARY)
++if (BUILD_EXAMPLES AND NOT STATIC_LIBRARY_FLAG)
+     add_subdirectory(examples)
+ endif()
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 3e1c35a..4cd9aef 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -1,6 +1,6 @@
@@ -1438,7 +1457,7 @@ index 3e1c35a..1579831 100644
      # Set some variables to insert the right files in the QRC
      if(Qt5Qml_VERSION VERSION_LESS 5.10)
          set(kirigami_ActionMenuItem ActionMenuItemQt59.qml)
-@@ -52,22 +52,22 @@ if(STATIC_LIBRARY)
+@@ -52,12 +52,12 @@ if(STATIC_LIBRARY)
      qt5_add_resources(
          RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/../kirigami.qrc
      )
@@ -1449,13 +1468,69 @@ index 3e1c35a..1579831 100644
  add_library(kirigamiplugin ${kirigami_SRCS} ${RESOURCES})
  
 -if(STATIC_LIBRARY)
--    SET_TARGET_PROPERTIES(kirigamiplugin PROPERTIES
--        AUTOMOC_MOC_OPTIONS -Muri=org.kde.kirigami)
 +if(STATIC_LIBRARY_FLAG)
-+#    SET_TARGET_PROPERTIES(kirigamiplugin PROPERTIES
-+#        AUTOMOC_MOC_OPTIONS -Muri=org.kde.kirigami)
+     SET_TARGET_PROPERTIES(kirigamiplugin PROPERTIES
+         AUTOMOC_MOC_OPTIONS -Muri=org.kde.kirigami)
      if (UNIX AND NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT(APPLE) AND NOT(DISABLE_DBUS))
-         set(Kirigami_EXTRA_LIBS Qt5::DBus)
+@@ -65,9 +65,9 @@ if(STATIC_LIBRARY)
+     else()
+         set(Kirigami_EXTRA_LIBS "")
+     endif()
+-else(STATIC_LIBRARY)
++else(STATIC_LIBRARY_FLAG)
+     set(Kirigami_EXTRA_LIBS KF5::Kirigami2)
+-endif(STATIC_LIBRARY)
++endif(STATIC_LIBRARY_FLAG)
+ 
+ 
+ target_link_libraries(kirigamiplugin
+@@ -77,7 +77,7 @@ target_link_libraries(kirigamiplugin
+             ${Kirigami_EXTRA_LIBS} Qt5::Qml Qt5::Quick Qt5::QuickControls2
+     )
+ 
+-if (NOT STATIC_LIBRARY)
++if (NOT STATIC_LIBRARY_FLAG)
+ 
+     add_custom_target(copy)
+ 
+@@ -118,6 +118,6 @@ if (NOT STATIC_LIBRARY)
+     install(FILES ${PRI_FILENAME}
+             DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
+ 
+-endif(NOT STATIC_LIBRARY)
++endif(NOT STATIC_LIBRARY_FLAG)
+ 
+ install(TARGETS kirigamiplugin DESTINATION ${KDE_INSTALL_QMLDIR}/org/kde/kirigami.2)
+kdedev@kde-static:~/kde/source/frameworks/kirigami$ 
+
+mi2plugin_qt)
+ else()
+     set(KIRIGAMI_STATIC_FILES
+@@ -27,7 +27,7 @@ set(kirigami_SRCS
+ 
+ add_subdirectory(libkirigami)
+ 
+-if(STATIC_LIBRARY)
++if(STATIC_LIBRARY_FLAG)
+     # Set some variables to insert the right files in the QRC
+     if(Qt5Qml_VERSION VERSION_LESS 5.10)
+         set(kirigami_ActionMenuItem ActionMenuItemQt59.qml)
+@@ -52,12 +52,12 @@ if(STATIC_LIBRARY)
+     qt5_add_resources(
+         RESOURCES ${CMAKE_CURRENT_BINARY_DIR}/../kirigami.qrc
+     )
+-endif(STATIC_LIBRARY)
++endif(STATIC_LIBRARY_FLAG)
+ 
+ 
+ add_library(kirigamiplugin ${kirigami_SRCS} ${RESOURCES})
+ 
+-if(STATIC_LIBRARY)
++if(STATIC_LIBRARY_FLAG)
+     SET_TARGET_PROPERTIES(kirigamiplugin PROPERTIES
+         AUTOMOC_MOC_OPTIONS -Muri=org.kde.kirigami)
+     if (UNIX AND NOT CMAKE_SYSTEM_NAME STREQUAL "Android" AND NOT(APPLE) AND NOT(DISABLE_DBUS))
+@@ -65,9 +65,9 @@ if(STATIC_LIBRARY)
      else()
          set(Kirigami_EXTRA_LIBS "")
      endif()
@@ -1579,18 +1654,6 @@ diff --git a/cmake/modules/SIPMacros.cmake b/cmake/modules/SIPMacros.cmake
 index 28c1cf4c..a3bccd43 100644
 --- a/cmake/modules/SIPMacros.cmake
 +++ b/cmake/modules/SIPMacros.cmake
-@@ -103,9 +103,9 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
-         ENDFOREACH(filename ${_sip_output_files})
-     ENDIF(NOT WIN32)
-     ADD_CUSTOM_COMMAND(
--        OUTPUT ${_sip_output_files} 
-+        OUTPUT ${_sip_output_files}
-         COMMAND ${CMAKE_COMMAND} -E echo ${message}
--        COMMAND ${TOUCH_COMMAND} ${_sip_output_files} 
-+        COMMAND ${TOUCH_COMMAND} ${_sip_output_files}
-         COMMAND ${SIP_EXECUTABLE} ${_sip_tags} ${_sip_x} ${SIP_EXTRA_OPTIONS} -j ${SIP_CONCAT_PARTS} -c ${CMAKE_CURRENT_SIP_OUTPUT_DIR} ${_sip_includes} ${_abs_module_sip}
-         DEPENDS ${_abs_module_sip} ${SIP_EXTRA_FILES_DEPEND}
-     )
 @@ -113,7 +113,7 @@ MACRO(ADD_SIP_PYTHON_MODULE MODULE_NAME MODULE_SIP)
      IF (CYGWIN)
          ADD_LIBRARY(${_logical_name} MODULE ${_sip_output_files} )
@@ -1885,28 +1948,6 @@ index 9d62638b9..d0fd31f00 100644
      target_link_libraries(${name}_packagestructure PRIVATE KF5::Package KF5::Plasma KF5::Declarative KF5::I18n)
      install(TARGETS ${name}_packagestructure DESTINATION ${KDE_INSTALL_PLUGINDIR}/kpackage/packagestructure)
  endfunction()
-diff --git a/src/plasma/private/framesvg_helpers.h b/src/plasma/private/framesvg_helpers.h
-index 08c233a9c..dcb4914af 100644
---- a/src/plasma/private/framesvg_helpers.h
-+++ b/src/plasma/private/framesvg_helpers.h
-@@ -31,7 +31,7 @@ namespace FrameSvgHelpers
- /**
-  * @returns the element id name for said @p borders
-  */
--QString borderToElementId(FrameSvg::EnabledBorders borders)
-+static QString borderToElementId(FrameSvg::EnabledBorders borders)
- {
-     if (borders == FrameSvg::NoBorder) {
-         return QStringLiteral("center");
-@@ -60,7 +60,7 @@ QString borderToElementId(FrameSvg::EnabledBorders borders)
- /**
-  * @returns the suggested geometry for the @p borders given a @p fullSize frame size and a @p contentRect
-  */
--QRect sectionRect(Plasma::FrameSvg::EnabledBorders borders, const QRect& contentRect, const QSize& fullSize)
-+static QRect sectionRect(Plasma::FrameSvg::EnabledBorders borders, const QRect& contentRect, const QSize& fullSize)
- {
-     //don't use QRect corner methods here, they have semantics that might come as unexpected.
-     //prefer constructing the points explicitly. e.g. from QRect::topRight docs:
 diff --git a/src/plasmaquick/CMakeLists.txt b/src/plasmaquick/CMakeLists.txt
 index d0f1e3c51..07bd4c9de 100644
 --- a/src/plasmaquick/CMakeLists.txt
@@ -2178,33 +2219,6 @@ index 382ee98..868485e 100644
  
  #optional features
  find_package(X11)
-EOF
-echo ./source/frameworks/syntax-highlighting
-git -C ./source/frameworks/syntax-highlighting checkout .
-patch -p1 -d ./source/frameworks/syntax-highlighting <<'EOF'
-diff --git a/examples/CMakeLists.txt b/examples/CMakeLists.txt
-index 652b72c..ad069ed 100644
---- a/examples/CMakeLists.txt
-+++ b/examples/CMakeLists.txt
-@@ -1,4 +1,5 @@
- if(Qt5Widgets_FOUND)
-     add_executable(codeeditor codeeditor.cpp main.cpp)
--    target_link_libraries(codeeditor Qt5::Widgets KF5SyntaxHighlighting)
-+#     target_link_libraries(codeeditor PRIVATE Qt5::Widgets KF5SyntaxHighlighting SyntaxHighlightingData)
-+    target_link_libraries(codeeditor PRIVATE Qt5::Widgets KF5SyntaxHighlighting)
- endif()
-diff --git a/src/cli/CMakeLists.txt b/src/cli/CMakeLists.txt
-index 1131153..37eaa5d 100644
---- a/src/cli/CMakeLists.txt
-+++ b/src/cli/CMakeLists.txt
-@@ -1,5 +1,6 @@
- add_executable(kate-syntax-highlighter kate-syntax-highlighter.cpp)
- ecm_mark_nongui_executable(kate-syntax-highlighter)
--target_link_libraries(kate-syntax-highlighter KF5SyntaxHighlighting)
-+# target_link_libraries(kate-syntax-highlighter PRIVATE KF5SyntaxHighlighting SyntaxHighlightingData)
-+target_link_libraries(kate-syntax-highlighter PRIVATE KF5SyntaxHighlighting)
- 
- install(TARGETS kate-syntax-highlighter ${INSTALL_TARGETS_DEFAULT_ARGS})
 EOF
 echo ./source/frameworks/kiconthemes
 git -C ./source/frameworks/kiconthemes checkout .
@@ -2964,28 +2978,6 @@ index e00c3254..1e03c045 100644
  
  target_link_libraries(kcm_webshortcuts
    PUBLIC
-diff --git a/src/kssld/kssld_adaptor.h b/src/kssld/kssld_adaptor.h
-index 337eb362..206a1bf0 100644
---- a/src/kssld/kssld_adaptor.h
-+++ b/src/kssld/kssld_adaptor.h
-@@ -27,7 +27,7 @@
- #include <QDBusAbstractAdaptor>
- #include <QDBusArgument>
- 
--#include "kssld_dbusmetatypes.h"
-+// #include "kssld_dbusmetatypes.h" ?????
- 
- class KSSLDAdaptor: public QDBusAbstractAdaptor
- {
-@@ -39,7 +39,7 @@ public:
-         : QDBusAbstractAdaptor(parent)
-     {
-         Q_ASSERT(parent);
--        registerMetaTypesForKSSLD();
-+//         registerMetaTypesForKSSLD(); ?????
-     }
- 
- private:
 EOF
 echo ./source/frameworks/baloo
 git -C ./source/frameworks/baloo checkout .
@@ -3001,7 +2993,7 @@ index 41dab7fb..51fa7114 100644
 +if(NOT BUILD_SHARED_LIBS)
 +    find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED NO_MODULE COMPONENTS Svg)
 +    find_Qt5GuiExtras()
-+    
++
 +    find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS WindowSystem IconThemes GuiAddons Archive)
 +endif()
  
@@ -3476,7 +3468,7 @@ index b12723f..6258673 100644
 +       else()
 +           get_target_property(KCONFIG_COMPILER_KF5_LOCATION KF5::kconfig_compiler LOCATION)
 +       endif()
-+       
++
         # the command for creating the source file from the kcfg file
         add_custom_command(OUTPUT ${_header_FILE} ${_src_FILE}
 -                          COMMAND KF5::kconfig_compiler
@@ -3657,26 +3649,29 @@ index dd668a4..c7d3867 100644
  
  # Mark it as non-gui so we won't create an app bundle on Mac OS X
 diff --git a/src/lib/plugin/kpluginfactory.h b/src/lib/plugin/kpluginfactory.h
-index 811b07f..e721a15 100644
+index 811b07f..bc43d04 100644
 --- a/src/lib/plugin/kpluginfactory.h
 +++ b/src/lib/plugin/kpluginfactory.h
-@@ -482,6 +482,7 @@ protected:
+@@ -482,6 +482,9 @@ protected:
       * new T(QObject *parent, const QVariantList &args)
       * \endcode
       */
++#ifndef BUILD_SHARED_LIBS
 +public:
++#endif
      template<class T>
      void registerPlugin(const QString &keyword = QString(), CreateInstanceFunction instanceFunction
                          = InheritanceChecker<T>().createInstanceFunction(reinterpret_cast<T *>(0)))
-@@ -490,7 +491,7 @@ protected:
+@@ -489,6 +492,9 @@ protected:
+         registerPlugin(keyword, &T::staticMetaObject, instanceFunction);
      }
  
-     KPluginFactoryPrivate *const d_ptr;
--
++#ifndef BUILD_SHARED_LIBS
 +protected:
++#endif
+     KPluginFactoryPrivate *const d_ptr;
+ 
      /**
-      * @deprecated since 4.0 use create<T>(QObject *parent, const QVariantList &args)
-      */
 EOF
 echo ./source/frameworks/kross
 git -C ./source/frameworks/kross checkout .
