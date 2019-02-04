@@ -20,17 +20,6 @@ USER kdedev
 WORKDIR /home/kdedev
 CMD bash
 
-# Get voidlinux ready for building
-RUN sudo xbps-install --yes xtools
-RUN git clone --depth 1 https://github.com/jschultz/void-packages
-RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
-	./xbps-src binary-bootstrap
-
-# Install patched version of proot
-COPY repo/* /home/kdedev/void-packages/hostdir/binpkgs/
-RUN sudo xbps-install --repository=void-packages/hostdir/binpkgs --yes proot
-RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
-
 RUN sudo xbps-install --yes \
         base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel \
         cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel \
@@ -45,7 +34,6 @@ RUN sudo xbps-install --yes fontconfig-devel dbus-devel icu-devel libxslt-devel 
 # Download, patch and build QT everywhere, QT webkit and friends, then delete sources
 RUN sudo xbps-install -y wget xz libaccounts-glib-devel doxygen
 COPY qt.musl.patch /home/kdedev
-# COPY execinfo.h.patch /home/kdedev
 COPY config.opt /home/kdedev
 RUN sudo sh -c 'printf -- "-release\n" >> config.opt'
 COPY libaccounts.patch /home/kdedev

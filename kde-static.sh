@@ -8,7 +8,6 @@ docker run --rm --privileged --cap-add=SYS_ADMIN --volume=`pwd`/repo:/void-packa
     cd void-packages && \
     ./xbps-src pkg -j4 proot"
 
-exit
 cp $HOME/.bashrc .
 docker build --file=kde-static.Dockerfile --tag=voidlinux/kde-static .
 
@@ -19,7 +18,7 @@ docker create --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
               voidlinux/kde-static
 
 # Prepare the KDE build
-docker cp $HOME/src/okular-static.cache/kde/source kde-static:/home/kdedev/kde
+docker cp $HOME/src/kde/source          kde-static:/home/kdedev/kde
 docker cp patch-kde.sh                  kde-static:/home/kdedev/kde
 docker cp kdesrc-buildrc-static         kde-static:/home/kdedev/kde/kdesrc-buildrc
 docker cp kdesrc-buildrc-sources        kde-static:/home/kdedev/kde

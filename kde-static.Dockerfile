@@ -59,7 +59,7 @@ RUN cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel
 RUN cd void-packages && ./xbps-src pkg -j4 libxcb-devel
 RUN cd void-packages && ./xbps-src pkg -j4 xcb-util-keysyms-devel
 RUN cd void-packages && ./xbps-src pkg -j4 libxml2-devel
-RUN cd void-packages && ./xbps-src pkg libglapi # Fails with -j4
+RUN cd void-packages && ./xbps-src pkg     libglapi # Fails with -j4
 RUN cd void-packages && ./xbps-src pkg -j4 libllvm7
 RUN cd void-packages && ./xbps-src pkg     poppler-devel
 RUN cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel

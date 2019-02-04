@@ -10,7 +10,7 @@ docker create --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
               voidlinux/kde-mingw-static
 
 # Prepare the KDE build
-docker cp $HOME/src/okular-static.cache/kde/source kde-mingw-static:/home/kdedev/kde
+docker cp $HOME/src/kde/source          kde-mingw-static:/home/kdedev/kde
 docker cp patch-kde.sh                  kde-mingw-static:/home/kdedev/kde
 docker cp kdesrc-buildrc-mingw          kde-mingw-static:/home/kdedev/kde/kdesrc-buildrc
 docker cp kdesrc-buildrc-sources        kde-mingw-static:/home/kdedev/kde
