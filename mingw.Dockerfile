@@ -20,12 +20,6 @@ USER kdedev
 WORKDIR /home/kdedev
 CMD bash
 
-# Get voidlinux ready for building - THIS CAN GO!
-RUN sudo xbps-install --yes xtools
-RUN git clone --depth 1 https://github.com/jschultz/void-packages
-RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
-	./xbps-src binary-bootstrap
-
 RUN sudo xbps-install --yes \
     bash \
 	git \
@@ -80,7 +74,7 @@ RUN ln -s /home/kdedev/mxe/usr/bin/i686-w64-mingw32.static-cmake /home/kdedev/mx
 
 # Install kdesrc-build
 RUN sudo xbps-install -y git perl-YAML-LibYAML
-RUN git clone git://anongit.kde.org/kdesrc-build.git
+RUN git clone --depth 1 git://anongit.kde.org/kdesrc-build.git
 
 RUN sudo xbps-install --yes ccache
 
@@ -88,14 +82,8 @@ RUN sudo xbps-install --yes ccache
 RUN mkdir kde
 
 # And some useful stuff for later on
-COPY build-git-patch kde
 RUN sudo xbps-install --yes bash ncurses-term vim
 COPY .bashrc /home/kdedev
-
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
 COPY authorized_keys /home/kdedev/.ssh
-
-# Get KDE sources - moved to script to avoid constantly downloading them
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --include-dependencies frameworks
-# RUN ~/kdesrc-build/kdesrc-build --verbose --rc-file=$HOME/kde/kdesrc-buildrc-sources --src-only --includeokular

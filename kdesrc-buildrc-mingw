@@ -31,7 +31,7 @@ global
     # ~/.config/kde-env-master.sh
     install-environment-driver true
 
-     set-env KDE_STANDARD_LIBRARIES -ldbus-1 -lmincore -liconv -lssl -lcrypto -lmincore -lgpg-error -lws2_32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/iconengines/libqsvgicon.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/platforms/libqwindows.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5Gui.a  /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5FontDatabaseSupport.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/platforms/libqdirect2d.a -lole32 -lwtsapi32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5EventDispatcherSupport.a -limm32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5ThemeSupport.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5WindowsUIAutomationSupport.a -lmincore -ldwmapi -lfreetype_too -lopengl32
+     set-env KDE_STANDARD_LIBRARIES -ldbus-1 -lmincore -liconv -lssl -lcrypto -lmincore -lgpg-error -lws2_32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/iconengines/libqsvgicon.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/platforms/libqwindows.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5Gui.a  /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5FontDatabaseSupport.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/plugins/platforms/libqdirect2d.a -lole32 -lwtsapi32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5EventDispatcherSupport.a -limm32 /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5ThemeSupport.a /home/kdedev/mxe/usr/i686-w64-mingw32.static/qt5/lib/libQt5WindowsUIAutomationSupport.a -lmincore -ldwmapi -lfreetype_too -lopengl32 -llcms2
     
     set-env QT_STATICPLUGIN TRUE
 
