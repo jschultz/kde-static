@@ -1,9 +1,12 @@
 #!/bin/bash
+# Needs to run under bash as other shells seem to mangle embedded \n line terminators
+#
 for f in `find -name ".git"`; do
   dir=$(dirname $f)
   patch=`git -C $dir --no-pager diff`
   if [ "$patch" != "" ]; then
-    echo "echo $dir"
+    echo "############ $(basename $dir) ############"
+    echo "echo Patching $dir"
     echo "git -C $dir checkout ."
     echo "patch -p1 -d $dir <<'EOF'"
     echo "$patch"

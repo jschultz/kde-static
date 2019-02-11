@@ -1,4 +1,5 @@
-echo ./source/frameworks/kded
+############ kded ############
+echo Patching ./source/frameworks/kded
 git -C ./source/frameworks/kded checkout .
 patch -p1 -d ./source/frameworks/kded <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -27,7 +28,8 @@ index f76e077..8685a4d 100644
  include(CMakePackageConfigHelpers)
  include(ECMSetupVersion)
 EOF
-echo ./source/frameworks/kjs
+############ kjs ############
+echo Patching ./source/frameworks/kjs
 git -C ./source/frameworks/kjs checkout .
 patch -p1 -d ./source/frameworks/kjs <<'EOF'
 diff --git a/src/kjs/CMakeLists.txt b/src/kjs/CMakeLists.txt
@@ -59,7 +61,8 @@ index c05f7a4..f1ec9c8 100644
  #set_target_properties(wtf PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
  #install(TARGETS wtf ${KF5_INSTALL_TARGETS_DEFAULT_ARGS} )
 EOF
-echo ./source/frameworks/kimageformats
+############ kimageformats ############
+echo Patching ./source/frameworks/kimageformats
 git -C ./source/frameworks/kimageformats checkout .
 patch -p1 -d ./source/frameworks/kimageformats <<'EOF'
 diff --git a/src/imageformats/CMakeLists.txt b/src/imageformats/CMakeLists.txt
@@ -76,7 +79,8 @@ index 0dc9707..15a5619 100644
      set_target_properties(${plugin} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/imageformats")
      target_link_libraries(${plugin} Qt5::Gui)
 EOF
-echo ./source/frameworks/knotifyconfig
+############ knotifyconfig ############
+echo Patching ./source/frameworks/knotifyconfig
 git -C ./source/frameworks/knotifyconfig checkout .
 patch -p1 -d ./source/frameworks/knotifyconfig <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -114,7 +118,8 @@ index bc9d413..6a06d63 100644
  # Includes
  
 EOF
-echo ./source/frameworks/kidletime
+############ kidletime ############
+echo Patching ./source/frameworks/kidletime
 git -C ./source/frameworks/kidletime checkout .
 patch -p1 -d ./source/frameworks/kidletime <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -185,7 +190,8 @@ index d31feb5..23ccc54 100644
      KF5IdleTime
      Qt5::X11Extras
 EOF
-echo ./source/frameworks/ktextwidgets
+############ ktextwidgets ############
+echo Patching ./source/frameworks/ktextwidgets
 git -C ./source/frameworks/ktextwidgets checkout .
 patch -p1 -d ./source/frameworks/ktextwidgets <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -218,7 +224,8 @@ index a0142ca..6359cb1 100644
  option(BUILD_QCH "Build API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)" OFF)
  add_feature_info(QCH ${BUILD_QCH} "API documentation in QCH format (for e.g. Qt Assistant, Qt Creator & KDevelop)")
 EOF
-echo ./source/frameworks/kdoctools
+############ kdoctools ############
+echo Patching ./source/frameworks/kdoctools
 git -C ./source/frameworks/kdoctools checkout .
 patch -p1 -d ./source/frameworks/kdoctools <<'EOF'
 diff --git a/KF5DocToolsMacros.cmake b/KF5DocToolsMacros.cmake
@@ -273,7 +280,8 @@ index 24f75a4..9a3cf7d 100644
  endif()
  
 EOF
-echo ./source/frameworks/ki18n
+############ ki18n ############
+echo Patching ./source/frameworks/ki18n
 git -C ./source/frameworks/ki18n checkout .
 patch -p1 -d ./source/frameworks/ki18n <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -290,7 +298,8 @@ index 850aaaa..f8356e7 100644
  target_link_libraries(ktranscript PRIVATE Qt5::Qml Qt5::Core)
  
 EOF
-echo ./source/frameworks/kparts
+############ kparts ############
+echo Patching ./source/frameworks/kparts
 git -C ./source/frameworks/kparts checkout .
 patch -p1 -d ./source/frameworks/kparts <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -362,7 +371,8 @@ index f8c69e6..64e10dd 100644
  install(TARGETS notepadpart  DESTINATION ${KDE_INSTALL_PLUGINDIR} )
  
 EOF
-echo ./source/frameworks/knewstuff
+############ knewstuff ############
+echo Patching ./source/frameworks/knewstuff
 git -C ./source/frameworks/knewstuff checkout .
 patch -p1 -d ./source/frameworks/knewstuff <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -394,7 +404,8 @@ index 8389685..06584d6 100644
  include(GenerateExportHeader)
  include(ECMSetupVersion)
 EOF
-echo ./source/frameworks/networkmanager-qt
+############ networkmanager-qt ############
+echo Patching ./source/frameworks/networkmanager-qt
 git -C ./source/frameworks/networkmanager-qt checkout .
 patch -p1 -d ./source/frameworks/networkmanager-qt <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -411,7 +422,8 @@ index 72b7fcf..f119eef 100644
  add_library(KF5::NetworkManagerQt ALIAS KF5NetworkManagerQt)
  
 EOF
-echo ./source/frameworks/frameworkintegration
+############ frameworkintegration ############
+echo Patching ./source/frameworks/frameworkintegration
 git -C ./source/frameworks/frameworkintegration checkout .
 patch -p1 -d ./source/frameworks/frameworkintegration <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -462,7 +474,8 @@ index fc28857..1ee9454 100644
  target_link_libraries(FrameworkIntegrationPlugin
      PRIVATE
 EOF
-echo ./source/frameworks/bluez-qt
+############ bluez-qt ############
+echo Patching ./source/frameworks/bluez-qt
 git -C ./source/frameworks/bluez-qt checkout .
 patch -p1 -d ./source/frameworks/bluez-qt <<'EOF'
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
@@ -479,7 +492,8 @@ index 59668a5..38d3e59 100644
  target_link_libraries(bluezqtextensionplugin
      Qt5::Core
 EOF
-echo ./source/frameworks/krunner
+############ krunner ############
+echo Patching ./source/frameworks/krunner
 git -C ./source/frameworks/krunner checkout .
 patch -p1 -d ./source/frameworks/krunner <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -547,7 +561,8 @@ index b6fabfd..0a0e059 100644
  
  install(TARGETS krunner_%{APPNAMELC} DESTINATION ${KDE_INSTALL_PLUGINDIR})
 EOF
-echo ./source/frameworks/kfilemetadata
+############ kfilemetadata ############
+echo Patching ./source/frameworks/kfilemetadata
 git -C ./source/frameworks/kfilemetadata checkout .
 patch -p1 -d ./source/frameworks/kfilemetadata <<'EOF'
 diff --git a/src/extractors/CMakeLists.txt b/src/extractors/CMakeLists.txt
@@ -683,7 +698,8 @@ index 864dc51..adfce40 100644
  
      target_link_libraries( kfilemetadata_taglibwriter
 EOF
-echo ./source/frameworks/kservice
+############ kservice ############
+echo Patching ./source/frameworks/kservice
 git -C ./source/frameworks/kservice checkout .
 patch -p1 -d ./source/frameworks/kservice <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -722,7 +738,8 @@ index b6c3a7b..dd8b083 100644
  target_link_libraries(fakeplugin KF5::Service)
  
 EOF
-echo ./source/frameworks/kmediaplayer
+############ kmediaplayer ############
+echo Patching ./source/frameworks/kmediaplayer
 git -C ./source/frameworks/kmediaplayer checkout .
 patch -p1 -d ./source/frameworks/kmediaplayer <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -765,7 +782,8 @@ index 52eb6a4..b9b6423 100644
  #
  # Subdirectories
 EOF
-echo ./source/frameworks/kirigami
+############ kirigami ############
+echo Patching ./source/frameworks/kirigami
 git -C ./source/frameworks/kirigami checkout .
 patch -p1 -d ./source/frameworks/kirigami <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -883,7 +901,8 @@ index 3e1c35a..4cd9aef 100644
  
  install(TARGETS kirigamiplugin DESTINATION ${KDE_INSTALL_QMLDIR}/org/kde/kirigami.2)
 EOF
-echo ./source/frameworks/kemoticons
+############ kemoticons ############
+echo Patching ./source/frameworks/kemoticons
 git -C ./source/frameworks/kemoticons checkout .
 patch -p1 -d ./source/frameworks/kemoticons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -923,7 +942,8 @@ index d12c36f..e4cc21d 100644
  target_link_libraries(KEmoticonsIntegrationPlugin
      PRIVATE
 EOF
-echo ./source/frameworks/knotifications
+############ knotifications ############
+echo Patching ./source/frameworks/knotifications
 git -C ./source/frameworks/knotifications checkout .
 patch -p1 -d ./source/frameworks/knotifications <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -961,7 +981,8 @@ index da34e23..a3a120b 100644
  find_package(Canberra)
  set_package_properties(Canberra PROPERTIES DESCRIPTION "Library for generating event sounds"
 EOF
-echo ./source/frameworks/ktexteditor
+############ ktexteditor ############
+echo Patching ./source/frameworks/ktexteditor
 git -C ./source/frameworks/ktexteditor checkout .
 patch -p1 -d ./source/frameworks/ktexteditor <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1018,7 +1039,8 @@ index ed6c1b77..47241c70 100644
  target_link_libraries(%{APPNAMELC}
      KF5::TextEditor
 EOF
-echo ./source/frameworks/kio
+############ kio ############
+echo Patching ./source/frameworks/kio
 git -C ./source/frameworks/kio checkout .
 patch -p1 -d ./source/frameworks/kio <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1180,7 +1202,8 @@ index e00c3254..1e03c045 100644
  target_link_libraries(kcm_webshortcuts
    PUBLIC
 EOF
-echo ./source/frameworks/plasma-framework
+############ plasma-framework ############
+echo Patching ./source/frameworks/plasma-framework
 git -C ./source/frameworks/plasma-framework checkout .
 patch -p1 -d ./source/frameworks/plasma-framework <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1431,7 +1454,8 @@ index e9b1270ec..aa73a2d00 100644
  kcoreaddons_desktop_to_json(
      plasma_engine_testengine plasma-dataengine-testengine.desktop
 EOF
-echo ./source/frameworks/kcompletion
+############ kcompletion ############
+echo Patching ./source/frameworks/kcompletion
 git -C ./source/frameworks/kcompletion checkout .
 patch -p1 -d ./source/frameworks/kcompletion <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1449,7 +1473,8 @@ index 3aa34e3..fc08275 100644
  find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
  find_package(KF5WidgetsAddons ${KF5_DEP_VERSION} REQUIRED)
 EOF
-echo ./source/frameworks/kiconthemes
+############ kiconthemes ############
+echo Patching ./source/frameworks/kiconthemes
 git -C ./source/frameworks/kiconthemes checkout .
 patch -p1 -d ./source/frameworks/kiconthemes <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1502,7 +1527,8 @@ index dfa59cc..902557b 100644
  int main(int argc, char *argv[])
  {
 EOF
-echo ./source/frameworks/kdnssd
+############ kdnssd ############
+echo Patching ./source/frameworks/kdnssd
 git -C ./source/frameworks/kdnssd checkout .
 patch -p1 -d ./source/frameworks/kdnssd <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -1519,7 +1545,8 @@ index 4a76703..2847a66 100644
    EXPORT_FILE_NAME ${KDNSSD_BINARY_DIR}/dnssd/kdnssd_export.h
  )
 EOF
-echo ./source/frameworks/kitemmodels
+############ kitemmodels ############
+echo Patching ./source/frameworks/kitemmodels
 git -C ./source/frameworks/kitemmodels checkout .
 patch -p1 -d ./source/frameworks/kitemmodels <<'EOF'
 diff --git a/autotests/proxymodeltestsuite/CMakeLists.txt b/autotests/proxymodeltestsuite/CMakeLists.txt
@@ -1536,7 +1563,8 @@ index cbb89aa..820b2dc 100644
    ${eventlogger_RCS_SRCS}
  )
 EOF
-echo ./source/frameworks/qqc2-desktop-style
+############ qqc2-desktop-style ############
+echo Patching ./source/frameworks/qqc2-desktop-style
 git -C ./source/frameworks/qqc2-desktop-style checkout .
 patch -p1 -d ./source/frameworks/qqc2-desktop-style <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1594,7 +1622,8 @@ index 90bbaea..20cbf16 100644
  
  if(KF5ConfigWidgets_FOUND)
 EOF
-echo ./source/frameworks/modemmanager-qt
+############ modemmanager-qt ############
+echo Patching ./source/frameworks/modemmanager-qt
 git -C ./source/frameworks/modemmanager-qt checkout .
 patch -p1 -d ./source/frameworks/modemmanager-qt <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -1611,7 +1640,8 @@ index 5e22a87..5207fe1 100644
  add_library(KF5::ModemManagerQt ALIAS KF5ModemManagerQt)
  
 EOF
-echo ./source/frameworks/purpose
+############ purpose ############
+echo Patching ./source/frameworks/purpose
 git -C ./source/frameworks/purpose checkout .
 patch -p1 -d ./source/frameworks/purpose <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1641,7 +1671,8 @@ index a645350..c8746a0 100644
  # Debian is a special snow flake and uses nodejs as binary name
  # https://lists.debian.org/debian-devel-announce/2012/07/msg00002.html
 EOF
-echo ./source/frameworks/kwallet
+############ kwallet ############
+echo Patching ./source/frameworks/kwallet
 git -C ./source/frameworks/kwallet checkout .
 patch -p1 -d ./source/frameworks/kwallet <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1694,7 +1725,8 @@ index fdd4710..a94f8e0 100644
  
  ecm_setup_version(${KF5_VERSION} VARIABLE_PREFIX KWALLETBACKEND SOVERSION 5)
 EOF
-echo ./source/frameworks/kglobalaccel
+############ kglobalaccel ############
+echo Patching ./source/frameworks/kglobalaccel
 git -C ./source/frameworks/kglobalaccel checkout .
 patch -p1 -d ./source/frameworks/kglobalaccel <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -1725,7 +1757,8 @@ index b76477f..0597803 100644
      KF5GlobalAccelPrivate
      XCB::XCB
 EOF
-echo ./source/frameworks/kcoreaddons
+############ kcoreaddons ############
+echo Patching ./source/frameworks/kcoreaddons
 git -C ./source/frameworks/kcoreaddons checkout .
 patch -p1 -d ./source/frameworks/kcoreaddons <<'EOF'
 diff --git a/KF5CoreAddonsMacros.cmake b/KF5CoreAddonsMacros.cmake
@@ -1819,7 +1852,8 @@ index 811b07f..bc43d04 100644
  
      /**
 EOF
-echo ./source/frameworks/kconfig
+############ kconfig ############
+echo Patching ./source/frameworks/kconfig
 git -C ./source/frameworks/kconfig checkout .
 patch -p1 -d ./source/frameworks/kconfig <<'EOF'
 diff --git a/KF5ConfigMacros.cmake b/KF5ConfigMacros.cmake
@@ -1859,7 +1893,8 @@ index dc0a08d..be7e6aa 100644
      add_executable(KF5::kconfig_compiler ALIAS kconfig_compiler)
  endif()
 EOF
-echo ./source/frameworks/sonnet
+############ sonnet ############
+echo Patching ./source/frameworks/sonnet
 git -C ./source/frameworks/sonnet checkout .
 patch -p1 -d ./source/frameworks/sonnet <<'EOF'
 diff --git a/src/plugins/aspell/CMakeLists.txt b/src/plugins/aspell/CMakeLists.txt
@@ -1941,7 +1976,8 @@ index ca22424..4adcb52 100644
  target_link_libraries(sonnet_voikko PRIVATE KF5::SonnetCore ${VOIKKO_LIBRARIES})
  
 EOF
-echo ./source/frameworks/baloo
+############ baloo ############
+echo Patching ./source/frameworks/baloo
 git -C ./source/frameworks/baloo checkout .
 patch -p1 -d ./source/frameworks/baloo <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2052,7 +2088,8 @@ index 936d0c9b..9fce64a8 100644
  
  target_link_libraries(baloomonitorplugin
 EOF
-echo ./source/frameworks/kbookmarks
+############ kbookmarks ############
+echo Patching ./source/frameworks/kbookmarks
 git -C ./source/frameworks/kbookmarks checkout .
 patch -p1 -d ./source/frameworks/kbookmarks <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2094,7 +2131,8 @@ index 2d51e38..4ab9dbb 100644
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
      ecm_install_po_files_as_qm(po)
 EOF
-echo ./source/frameworks/kxmlgui
+############ kxmlgui ############
+echo Patching ./source/frameworks/kxmlgui
 git -C ./source/frameworks/kxmlgui checkout .
 patch -p1 -d ./source/frameworks/kxmlgui <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2129,7 +2167,8 @@ index 6b2579a..419882a 100644
                         PURPOSE "Support for Get Hot New Stuff in KXMLGUI"
                         URL "https://projects.kde.org/attica"
 EOF
-echo ./source/frameworks/prison
+############ prison ############
+echo Patching ./source/frameworks/prison
 git -C ./source/frameworks/prison checkout .
 patch -p1 -d ./source/frameworks/prison <<'EOF'
 diff --git a/src/quick/CMakeLists.txt b/src/quick/CMakeLists.txt
@@ -2143,7 +2182,8 @@ index 03cdbb5..b877293 100644
      prisonquickplugin.cpp
  )
 EOF
-echo ./source/frameworks/kdesignerplugin
+############ kdesignerplugin ############
+echo Patching ./source/frameworks/kdesignerplugin
 git -C ./source/frameworks/kdesignerplugin checkout .
 patch -p1 -d ./source/frameworks/kdesignerplugin <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2185,7 +2225,8 @@ index b404f66..7368cb9 100644
               PRIVATE ${Qt5UiPlugin_INCLUDE_DIRS}
               PRIVATE ${Qt5Designer_INCLUDE_DIRS}
 EOF
-echo ./source/frameworks/kdewebkit
+############ kdewebkit ############
+echo Patching ./source/frameworks/kdewebkit
 git -C ./source/frameworks/kdewebkit checkout .
 patch -p1 -d ./source/frameworks/kdewebkit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2226,7 +2267,8 @@ index 0ac9553..cfaec0e 100644
  remove_definitions(-DQT_NO_CAST_FROM_ASCII)
  remove_definitions(-DQT_NO_CAST_FROM_BYTEARRAY)
 EOF
-echo ./source/frameworks/kconfigwidgets
+############ kconfigwidgets ############
+echo Patching ./source/frameworks/kconfigwidgets
 git -C ./source/frameworks/kconfigwidgets checkout .
 patch -p1 -d ./source/frameworks/kconfigwidgets <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -2254,7 +2296,8 @@ index a35cf3c..da192ad 100644
  generate_export_header(KF5ConfigWidgets BASE_NAME KConfigWidgets)
  add_library(KF5::ConfigWidgets ALIAS KF5ConfigWidgets)
 EOF
-echo ./source/frameworks/kactivities-stats
+############ kactivities-stats ############
+echo Patching ./source/frameworks/kactivities-stats
 git -C ./source/frameworks/kactivities-stats checkout .
 patch -p1 -d ./source/frameworks/kactivities-stats <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -2271,7 +2314,8 @@ index d0c4927..42c010a 100644
     )
  add_library(KF5::ActivitiesStats ALIAS KF5ActivitiesStats)
 EOF
-echo ./source/frameworks/kdesu
+############ kdesu ############
+echo Patching ./source/frameworks/kdesu
 git -C ./source/frameworks/kdesu checkout .
 patch -p1 -d ./source/frameworks/kdesu <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2300,7 +2344,8 @@ index 382ee98..868485e 100644
  #optional features
  find_package(X11)
 EOF
-echo ./source/frameworks/khtml
+############ khtml ############
+echo Patching ./source/frameworks/khtml
 git -C ./source/frameworks/khtml checkout .
 patch -p1 -d ./source/frameworks/khtml <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2425,7 +2470,8 @@ index 31b456f..c6b280c 100644
  target_link_libraries(kmultipart
                          ${ZLIB_LIBRARY}
 EOF
-echo ./source/frameworks/kdbusaddons
+############ kdbusaddons ############
+echo Patching ./source/frameworks/kdbusaddons
 git -C ./source/frameworks/kdbusaddons checkout .
 patch -p1 -d ./source/frameworks/kdbusaddons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2442,7 +2488,8 @@ index 386cfcb..48a2d50 100644
  
  include(GenerateExportHeader)
 EOF
-echo ./source/frameworks/kholidays
+############ kholidays ############
+echo Patching ./source/frameworks/kholidays
 git -C ./source/frameworks/kholidays checkout .
 patch -p1 -d ./source/frameworks/kholidays <<'EOF'
 diff --git a/src/declarative/CMakeLists.txt b/src/declarative/CMakeLists.txt
@@ -2456,7 +2503,8 @@ index 825bbb9..f8f02b8 100644
  target_link_libraries(kholidaysdeclarativeplugin
    Qt5::Qml
 EOF
-echo ./source/frameworks/kcmutils
+############ kcmutils ############
+echo Patching ./source/frameworks/kcmutils
 git -C ./source/frameworks/kcmutils checkout .
 patch -p1 -d ./source/frameworks/kcmutils <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2494,7 +2542,8 @@ index ac05c44..ba30067 100644
  add_definitions(-DTRANSLATION_DOMAIN=\"kcmutils5\")
  if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
 EOF
-echo ./source/frameworks/kxmlrpcclient
+############ kxmlrpcclient ############
+echo Patching ./source/frameworks/kxmlrpcclient
 git -C ./source/frameworks/kxmlrpcclient checkout .
 patch -p1 -d ./source/frameworks/kxmlrpcclient <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2522,7 +2571,8 @@ index 3b81a4e3a..53f97b4c1 100644
     add_definitions(-DBUILD_TESTING)
  endif(BUILD_TESTING)
 EOF
-echo ./source/frameworks/kinit
+############ kinit ############
+echo Patching ./source/frameworks/kinit
 git -C ./source/frameworks/kinit checkout .
 patch -p1 -d ./source/frameworks/kinit <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2590,7 +2640,8 @@ index 834e2be..a13f5e3 100644
      if (APPLE)
          set(_resourcefile ${MACOSX_BUNDLE_ICON_FILE})
 EOF
-echo ./source/frameworks/kdelibs4support
+############ kdelibs4support ############
+echo Patching ./source/frameworks/kdelibs4support
 git -C ./source/frameworks/kdelibs4support checkout .
 patch -p1 -d ./source/frameworks/kdelibs4support <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2744,7 +2795,8 @@ index 9fa30651..042388a6 100644
      OUTPUT_NAME networkstatus
  )
 EOF
-echo ./source/frameworks/kdeclarative
+############ kdeclarative ############
+echo Patching ./source/frameworks/kdeclarative
 git -C ./source/frameworks/kdeclarative checkout .
 patch -p1 -d ./source/frameworks/kdeclarative <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2898,7 +2950,8 @@ index ce0ea74..9c3892a 100644
          Qt5::Core
          Qt5::Qml
 EOF
-echo ./source/frameworks/kactivities
+############ kactivities ############
+echo Patching ./source/frameworks/kactivities
 git -C ./source/frameworks/kactivities checkout .
 patch -p1 -d ./source/frameworks/kactivities <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2942,7 +2995,8 @@ index 11eaee4..f3c37cd 100644
     )
  add_library (KF5::Activities ALIAS KF5Activities)
 EOF
-echo ./source/frameworks/kwindowsystem
+############ kwindowsystem ############
+echo Patching ./source/frameworks/kwindowsystem
 git -C ./source/frameworks/kwindowsystem checkout .
 patch -p1 -d ./source/frameworks/kwindowsystem <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -2987,7 +3041,8 @@ index 99fa1ed..abf78c9 100644
      KF5WindowSystem
      Qt5::X11Extras
 EOF
-echo ./source/frameworks/kcrash
+############ kcrash ############
+echo Patching ./source/frameworks/kcrash
 git -C ./source/frameworks/kcrash checkout .
 patch -p1 -d ./source/frameworks/kcrash <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -3016,7 +3071,8 @@ index 7a382dd..386dc54 100644
    target_link_libraries(KF5Crash PRIVATE Qt5::X11Extras ${X11_LIBRARIES})
    target_include_directories(KF5Crash PRIVATE ${X11_X11_INCLUDE_PATH})
 EOF
-echo ./source/frameworks/solid
+############ solid ############
+echo Patching ./source/frameworks/solid
 git -C ./source/frameworks/solid checkout .
 patch -p1 -d ./source/frameworks/solid <<'EOF'
 diff --git a/src/imports/CMakeLists.txt b/src/imports/CMakeLists.txt
@@ -3033,7 +3089,8 @@ index d0a4a7b..1d4c3b0 100644
  target_link_libraries(
      solidextensionplugin
 EOF
-echo ./source/frameworks/kpeople
+############ kpeople ############
+echo Patching ./source/frameworks/kpeople
 git -C ./source/frameworks/kpeople checkout .
 patch -p1 -d ./source/frameworks/kpeople <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -3124,7 +3181,8 @@ index e189aff..d421e72 100644
  #
  # install(TARGETS phonedetailswidgetplugin DESTINATION ${PLUGIN_INSTALL_DIR})
 EOF
-echo ./source/frameworks/extra-cmake-modules
+############ extra-cmake-modules ############
+echo Patching ./source/frameworks/extra-cmake-modules
 git -C ./source/frameworks/extra-cmake-modules checkout .
 patch -p1 -d ./source/frameworks/extra-cmake-modules <<'EOF'
 diff --git a/attic/modules/SIPMacros.cmake b/attic/modules/SIPMacros.cmake
@@ -3144,7 +3202,7 @@ index 7c5476e..e42cc5e 100644
      TARGET_LINK_LIBRARIES(${_logical_name} ${PYTHON_LIBRARY})
      TARGET_LINK_LIBRARIES(${_logical_name} ${EXTRA_LINK_LIBRARIES})
 diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.cmake
-index 3f7f5a8..de75157 100644
+index 17d79a0..a329fa2 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
 @@ -174,6 +174,30 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
@@ -3205,7 +3263,8 @@ index 151db9f..ab3b963 100644
  target_compile_features(ExternalLib PUBLIC cxx_nullptr)
  
 EOF
-echo ./source/frameworks/kauth
+############ kauth ############
+echo Patching ./source/frameworks/kauth
 git -C ./source/frameworks/kauth checkout .
 patch -p1 -d ./source/frameworks/kauth <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -3231,7 +3290,8 @@ index 9850acd..46217f5 100644
      set_target_properties(kauth_helper_plugin PROPERTIES PREFIX "")
      install(TARGETS kauth_helper_plugin
 EOF
-echo ./source/frameworks/kross
+############ kross ############
+echo Patching ./source/frameworks/kross
 git -C ./source/frameworks/kross checkout .
 patch -p1 -d ./source/frameworks/kross <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -3315,7 +3375,8 @@ index 93d3bd9..f2ee6be 100644
      KF5::I18n
      KF5::KrossCore
 EOF
-echo ./source/kdesupport/phonon/phonon
+############ phonon ############
+echo Patching ./source/kdesupport/phonon/phonon
 git -C ./source/kdesupport/phonon/phonon checkout .
 patch -p1 -d ./source/kdesupport/phonon/phonon <<'EOF'
 diff --git a/cmake/PhononMacros.cmake b/cmake/PhononMacros.cmake
@@ -3406,7 +3467,8 @@ index 52d50cf8..31376337 100644
  
  #ifndef PHONON_DEPRECATED
 EOF
-echo ./source/kdesupport/polkit-qt-1
+############ polkit-qt-1 ############
+echo Patching ./source/kdesupport/polkit-qt-1
 git -C ./source/kdesupport/polkit-qt-1 checkout .
 patch -p1 -d ./source/kdesupport/polkit-qt-1 <<'EOF'
 diff --git a/agent/CMakeLists.txt b/agent/CMakeLists.txt
@@ -3449,7 +3511,8 @@ index 8d1d537..f56bed0 100644
  add_library(${POLKITQT-1_CAMEL_NAME}::Gui ALIAS ${POLKITQT-1_GUI_PCNAME})
  
 EOF
-echo ./source/kde/kdenetwork/kaccounts-integration
+############ kaccounts-integration ############
+echo Patching ./source/kde/kdenetwork/kaccounts-integration
 git -C ./source/kde/kdenetwork/kaccounts-integration checkout .
 patch -p1 -d ./source/kde/kdenetwork/kaccounts-integration <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
@@ -3517,7 +3580,8 @@ index 01d0671..4c92a23 100644
  )
  
 EOF
-echo ./source/kde/kdegraphics/kdegraphics-mobipocket
+############ kdegraphics-mobipocket ############
+echo Patching ./source/kde/kdegraphics/kdegraphics-mobipocket
 git -C ./source/kde/kdegraphics/kdegraphics-mobipocket checkout .
 patch -p1 -d ./source/kde/kdegraphics/kdegraphics-mobipocket <<'EOF'
 diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
@@ -3547,7 +3611,8 @@ index e9ff6ca..5604996 100644
  install(TARGETS mobithumbnail DESTINATION ${PLUGIN_INSTALL_DIR})
  
 EOF
-echo ./source/kde/kdegraphics/okular
+############ okular ############
+echo Patching ./source/kde/kdegraphics/okular
 git -C ./source/kde/kdegraphics/okular checkout .
 patch -p1 -d ./source/kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -3958,7 +4023,8 @@ index d09a4f026..d65cda08f 100644
          buttonlay->addWidget( close );
          // option button row
 EOF
-echo ./source/kde/kdegraphics/libs/libkexiv2
+############ libkexiv2 ############
+echo Patching ./source/kde/kdegraphics/libs/libkexiv2
 git -C ./source/kde/kdegraphics/libs/libkexiv2 checkout .
 patch -p1 -d ./source/kde/kdegraphics/libs/libkexiv2 <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
