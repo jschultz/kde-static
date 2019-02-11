@@ -6,9 +6,7 @@ global
     branch-group stable-kf5-qt5
 
     # Directory for downloaded source code
-    source-dir /home/kdedev/kde/source
-    
-    git-options --depth=1
+    source-dir ~/src/kde/source
 
 end global
 
