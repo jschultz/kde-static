@@ -27,7 +27,7 @@ CMD bash
 # Get voidlinux ready for building
 RUN sudo xbps-install --yes xtools
 RUN git clone --depth 1 https://github.com/jschultz/void-packages
-RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
+RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/* && \
 	./xbps-src binary-bootstrap
 
 # Install patched version of proot

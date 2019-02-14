@@ -97,8 +97,3 @@ module-set kirigami
     use-modules kirigami
     tag v5.54.0
 end module-set
-
-# kio doesn't have a 5.54.0 tag
-options kio
-    tag v5.54.0-rc2
-end options

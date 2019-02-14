@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+SOURCEDIR=$HOME/src/kde/source
+INSTALLDIR=$HOME/src/kde/install-mingw
+KDESRC_BUILDRC=kdesrc-buildrc-mingw
+DOCKERFILE=mingw.Dockerfile
+IMAGE_TAG=voidlinux/kde-mingw-static
+CONTAINER_NAME=kde-mingw-static
+
+cd $(dirname $(realpath $0))
+
 # Build the docker image
 docker build \
     --build-arg mirror=$mirror \
@@ -8,26 +17,35 @@ docker build \
     --build-arg https_proxy=$https_proxy \
     --build-arg ftp_proxy=$ftp_proxy \
     --build-arg certificate=$certificate \
-    --file=mingw.Dockerfile \
-    --tag=voidlinux/kde-mingw-static .
+    --file=$DOCKERFILE \
+    --tag=$IMAGE_TAG .
+
+# Create installation directory - otherwise Docker will create it with root ownership.
+if ! test -d $INSTALLDIR; then
+    mkdir $INSTALLDIR
+fi
 
 # Create container to build KDE
 docker create \
     --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
     --volume /srv/docker/ccache:/ccache    --env CCACHE_DIR=/ccache \
-    --volume $HOME/src/kde/source:/home/kdedev/kde/source \
+    --volume $SOURCEDIR:/home/kdedev/kde/source \
+    --volume $INSTALLDIR:/home/kdedev/kde/install \
     --interactive --tty \
-    --name=kde-mingw-static --hostname=kde-mingw-static \
-    voidlinux/kde-mingw-static
+    --name=$CONTAINER_NAME --hostname=$CONTAINER_NAME \
+    $IMAGE_TAG
 
 # Prepare the KDE build
-docker cp kdesrc-buildrc-mingw          kde-mingw-static:/home/kdedev/kde/kdesrc-buildrc
-docker cp kf5-frameworks-build-include  kde-mingw-static:/home/kdedev/kde
+docker cp $KDESRC_BUILDRC              $CONTAINER_NAME:/home/kdedev/kde/kdesrc-buildrc
+docker cp kf5-frameworks-build-include $CONTAINER_NAME:/home/kdedev/kde
+
+# Copy our public key to the image for eash SSH access
+docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh
 
 # Prebuilt executables needed for cross-building
-docker cp hostapps kde-mingw-static:/home/kdedev
+docker cp hostapps $CONTAINER_NAME:/home/kdedev
 
-docker start kde-mingw-static
+docker start $CONTAINER_NAME
 
-docker exec kde-mingw-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
-docker exec kde-mingw-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"

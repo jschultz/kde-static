@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+SOURCEDIR=$HOME/src/kde/source
+INSTALLDIR=$HOME/src/kde/install-static
+KDESRC_BUILDRC=kdesrc-buildrc-static
+DOCKERFILE=kde-static.Dockerfile
+IMAGE_TAG=voidlinux/kde-static
+CONTAINER_NAME=kde-static
+
+cd $(dirname $(realpath $0))
+
 # Build the initial build container
 docker build \
     --build-arg mirror=$mirror \
@@ -27,24 +36,36 @@ docker build \
     --build-arg http_proxy=$http_proxy \
     --build-arg https_proxy=$https_proxy \
     --build-arg ftp_proxy=$ftp_proxy \
-    --build-arg certificate=$certificate \ 
-    --file=kde-static.Dockerfile \
-    --tag=voidlinux/kde-static .
+    --build-arg certificate=$certificate \
+    --file=$DOCKERFILE \
+    --tag=$IMAGE_TAG .
+
+# Create installation directory - otherwise Docker will create it with root ownership.
+if ! test -d $INSTALLDIR; then
+    mkdir $INSTALLDIR
+fi
 
 # Create container to build KDE
 docker create \
     --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
     --volume /srv/docker/ccache:/ccache    --env CCACHE_DIR=/ccache \
-    --volume $HOME/src/kde/source:/home/kdedev/kde/source \
+    --volume $SOURCEDIR:/home/kdedev/kde/source \
+    --volume $INSTALLDIR:/home/kdedev/kde/install \
     --interactive --tty \
-    --name=kde-static --hostname=kde-static \
-    voidlinux/kde-static
+    --name=$CONTAINER_NAME --hostname=$CONTAINER_NAME \
+    $IMAGE_TAG
 
 # Prepare the KDE build
-docker cp kdesrc-buildrc-static         kde-static:/home/kdedev/kde/kdesrc-buildrc
-docker cp kf5-frameworks-build-include  kde-static:/home/kdedev/kde
+docker cp $KDESRC_BUILDRC              $CONTAINER_NAME:/home/kdedev/kde/kdesrc-buildrc
+docker cp kf5-frameworks-build-include $CONTAINER_NAME:/home/kdedev/kde
 
-docker start kde-static
+# Copy our public key to the image for eash SSH access
+docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh
 
-docker exec kde-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
-docker exec kde-static sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"
+# Prebuilt executables needed for cross-building
+docker cp hostapps $CONTAINER_NAME:/home/kdedev
+
+docker start $CONTAINER_NAME
+
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"

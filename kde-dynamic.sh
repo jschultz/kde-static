@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+SOURCEDIR=$HOME/src/kde/source
+INSTALLDIR=$HOME/src/kde/install-dynamic
+KDESRC_BUILDRC=kdesrc-buildrc-dynamic
+DOCKERFILE=kde-dynamic.Dockerfile
+IMAGE_TAG=voidlinux/kde-dynamic
+CONTAINER_NAME=kde-dynamic
+
+cd $(dirname $(realpath $0))
+
 # Build the docker image
 docker build \
     --build-arg mirror=$mirror \
@@ -8,23 +17,32 @@ docker build \
     --build-arg https_proxy=$https_proxy \
     --build-arg ftp_proxy=$ftp_proxy \
     --build-arg certificate=$certificate \
-    --file=kde-dynamic.Dockerfile \
-    --tag=voidlinux/kde-dynamic .
+    --file=$DOCKERFILE \
+    --tag=$IMAGE_TAG .
+
+# Create installation directory - otherwise Docker will create it with root ownership.
+if ! test -d $INSTALLDIR; then
+    mkdir $INSTALLDIR
+fi
 
 # Create container to build KDE
 docker create \
     --volume /tmp/.X11-unix:/tmp/.X11-unix --env DISPLAY=$DISPLAY \
     --volume /srv/docker/ccache:/ccache    --env CCACHE_DIR=/ccache \
-    --volume $HOME/src/kde/source:/home/kdedev/kde/source \
+    --volume $SOURCEDIR:/home/kdedev/kde/source \
+    --volume $INSTALLDIR:/home/kdedev/kde/install \
     --interactive --tty \
-    --name=kde-dynamic --hostname=kde-dynamic \
-    voidlinux/kde-dynamic
+    --name=$CONTAINER_NAME --hostname=$CONTAINER_NAME \
+    $IMAGE_TAG
 
 # Prepare the KDE build
-docker cp kdesrc-buildrc-dynamic        kde-dynamic:/home/kdedev/kde/kdesrc-buildrc
-docker cp kf5-frameworks-build-include  kde-dynamic:/home/kdedev/kde
+docker cp $KDESRC_BUILDRC              $CONTAINER_NAME:/home/kdedev/kde/kdesrc-buildrc
+docker cp kf5-frameworks-build-include $CONTAINER_NAME:/home/kdedev/kde
 
-docker start kde-dynamic
+# Copy our public key to the image for eash SSH access
+docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh
 
-docker exec kde-dynamic sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
-docker exec kde-dynamic sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"
+docker start $CONTAINER_NAME
+
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"
