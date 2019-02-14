@@ -20,7 +20,7 @@ statically linked executable it should run on pretty much any Linux distribution
 ## How to build KDE frameworks and okular statically
 
 To build KDE frameworks plus okular statically, you'll need to start by downloading the KDE sources. The best way to do this is to use
-[kdesrc-build](https://kdesrc-build.kde.org/). The configuration file [kdesrc-buildrc-sources] downloads frameworks revision
+[kdesrc-build](https://kdesrc-build.kde.org/). The configuration file [kdesrc-buildrc-sources](kdesrc-buildrc-sources) downloads frameworks revision
 v5.54.0 and okular revision 18.12. Currently hard-coded, the KDE sources need to be loaded under ~/src/kde/source.
 
 Having downloaded the KDE sources you need to apply the patches to enable them to be build statically. You can do this by invoking the
@@ -31,21 +31,32 @@ You can now start the build process by running [kde-static.sh](kde-static.sh) fr
 ## How it works
 
 The process begins by building the proot library, which owing to an upstream release issue, does not work correctly on modern kernels
-in its stock release. This creates an initial docker image named voidlinux/build.
+in its stock release. This creates an initial docker image named `voidlinux/build`.
 
-It then creates a second docker image named voidlinux/kde-static. This image contains all the prerequisites for building KDE:
+It then creates a second docker image named `voidlinux/kde-static`. This image contains all the prerequisites for building KDE:
 
 - Packages that need to be build specially to get static libraries.
 - qt5, qtwebkit, libaccounts, signond
 - kdesrc-build
 
-Finally the build script launches a conainer kde-static and builds frameworks and okular inside.
+Finally the build script launches a conainer `kde-static` to build frameworks and okular using the stock kdesrc-build script. When it is finished the results can be extracted from the container, directory /home/kdedev/kde/install [TODO: Make this directory a volume]
 
 ## The results
 
-The final okular executable is around 85MB in size, which seems pretty reasonable to me for such a large application. Apparently using
-Link-Time Optimization this could be reduced by up to 80%.
+The final okular executable is around 85MB in size, which seems pretty reasonable to me for such a large application. Apparently by
+using Link-Time Optimization (LTO) this could be reduced by up to 80%.
 
 ## Other things
 
-Similar scripts kde-dynamic.sh and ming.sh build KDE frameworks and okular dynamically and cross-built for MingW32 respectively.
+Since my internet connection is the end of the proverbial wet piece of string, I have done a few things to reduce net traffic.
+These shouldn't affect someone who isn't worried about these things, but you are, or if they cause problems, then note that:
+
+1. `http_proxy`, `https_proxy` and `ftp_proxy` are all inherited into docker images and containers
+2. The environment variable `certificate` can contain the name of a file inside the build context (ie the repository root) that
+contains a certificate that will be loaded into the docker image. This allows proxying of https connections by, for example, squid,
+which acts as a 'man in the middle' on secure net connections, so that the client sees connections signed with a different
+certificate.
+
+Similar scripts `kde-dynamic.sh` and `ming.sh` build KDE frameworks and okular dynamically and cross-built for MingW32 respectively.
+Note that several frameworks modules fail to build for MingW32, but okular can nonetheless be build successfully. It almost runs,
+but seems to have some problems finding and translating menu items. [TODO: fix this]
