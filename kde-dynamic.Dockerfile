@@ -89,4 +89,4 @@ RUN sudo xbps-install --yes bash ncurses-term vim
 COPY .bashrc /home/kdedev
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
-COPY authorized_keys /home/kdedev/.ssh
+COPY $HOME/.ssh/id_rsa.pub /home/kdedev/.ssh

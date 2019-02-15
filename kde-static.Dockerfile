@@ -32,7 +32,7 @@ RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/
 	./xbps-src binary-bootstrap
 
 # Install patched version of proot
-COPY repo/* /home/kdedev/void-packages/hostdir/binpkgs/
+COPY binpkgs/* /home/kdedev/void-packages/hostdir/binpkgs/
 RUN sudo xbps-install --repository=void-packages/hostdir/binpkgs --yes proot
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
 
@@ -46,30 +46,28 @@ RUN sudo xbps-install --yes \
 
 
 # Rebuild xbps because of redirection problem: https://github.com/voidlinux/xbps/issues/295
-RUN cd void-packages && ./xbps-src pkg -j4 xbps
-RUN cp -r void-packages/hostdir/binpkgs .
-RUN sudo sh -c "echo repository=/home/kdedev/binpkgs > /etc/xbps.d/00-repository-local.conf"
-
-RUN sudo xbps-install --force --yes xbps libxbps
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/xbps-*.xbps ; then cd void-packages && ./xbps-src pkg -j4 xbps; fi
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes xbps libxbps
+RUN sudo sh -c "echo repository=/home/kdedev/void-packages/hostdir/binpkgs > /etc/xbps.d/00-repository-local.conf"
 
 # Now update build packages to pick up fixed xbps
-RUN cp -r binpkgs void-packages/masterdir/host && cd void-packages && ./xbps-src zap && ./xbps-src binary-bootstrap
+RUN cp -r /home/kdedev/void-packages/hostdir/binpkgs void-packages/masterdir/host && cd void-packages && ./xbps-src zap && ./xbps-src binary-bootstrap
 
 # Build packages
-RUN cd void-packages && ./xbps-src pkg -j4 fontconfig-devel
-RUN cd void-packages && ./xbps-src pkg -j4 dbus-devel
-RUN cd void-packages && ./xbps-src pkg -j4 icu-devel
-RUN cd void-packages && ./xbps-src pkg -j4 libxslt-devel
-RUN cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel
-RUN cd void-packages && ./xbps-src pkg -j4 libxcb-devel
-RUN cd void-packages && ./xbps-src pkg -j4 xcb-util-keysyms-devel
-RUN cd void-packages && ./xbps-src pkg -j4 libxml2-devel
-RUN cd void-packages && ./xbps-src pkg     libglapi # Fails with -j4
-RUN cd void-packages && ./xbps-src pkg -j4 libllvm7
-RUN cd void-packages && ./xbps-src pkg     poppler-devel
-RUN cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel
-RUN cd void-packages && ./xbps-src pkg -j4 wayland
-RUN cd void-packages && ./xbps-src pkg -j4 qrencode
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/fontconfig-devel-*.xbps;       then cd void-packages && ./xbps-src pkg -j4 fontconfig-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/dbus-devel-*.xbps;             then cd void-packages && ./xbps-src pkg -j4 dbus-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/dbus-devel-*.xbps;             then cd void-packages && ./xbps-src pkg -j4 dbus-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libxslt-devel-*.xbps;          then cd void-packages && ./xbps-src pkg -j4 libxslt-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libgpg-error-devel-*.xbps;     then cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libxcb-devel-*.xbps;           then cd void-packages && ./xbps-src pkg -j4 libxcb-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/xcb-util-keysyms-devel-*.xbps; then cd void-packages && ./xbps-src pkg -j4 xcb-util-keysyms-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libxml2-devel-*.xbps;          then cd void-packages && ./xbps-src pkg -j4 libxml2-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libglapi-*.xbps;               then cd void-packages && ./xbps-src pkg     libglapi; fi # Fails with -j4
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libllvm7-*.xbps;               then cd void-packages && ./xbps-src pkg -j4 libllvm7; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/poppler-devel-*.xbps;          then cd void-packages && ./xbps-src pkg     poppler-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/poppler-qt5-devel-*.xbps;      then cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/wayland-*.xbps;                then cd void-packages && ./xbps-src pkg -j4 wayland; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/qrencode-*.xbps;               then cd void-packages && ./xbps-src pkg -j4 qrencode; fi
 
 # Install built packages
 RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel wayland qrencode
@@ -127,4 +125,4 @@ RUN sudo xbps-install --yes bash ncurses-term vim
 COPY .bashrc /home/kdedev
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
-COPY authorized_keys /home/kdedev/.ssh
+COPY $HOME/.ssh/id_rsa.pub /home/kdedev/.ssh

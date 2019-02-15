@@ -10,25 +10,28 @@ CONTAINER_NAME=kde-static
 
 cd $(dirname $(realpath $0))
 
-# Build the initial build container
-docker build \
-    --build-arg mirror=$mirror \
-    --build-arg http_proxy=$http_proxy \
-    --build-arg https_proxy=$https_proxy \
-    --build-arg ftp_proxy=$ftp_proxy \
-    --build-arg certificate=$certificate \
-    --file=voidlinux-musl.Dockerfile \
-    --tag=voidlinux/build .
+# Build proot if we don't already have it
+if ! test -f binpkgs/proot-*.x86_64-musl.xbps; then
+    # Build the initial build container
+    docker build \
+        --build-arg mirror=$mirror \
+        --build-arg http_proxy=$http_proxy \
+        --build-arg https_proxy=$https_proxy \
+        --build-arg ftp_proxy=$ftp_proxy \
+        --build-arg certificate=$certificate \
+        --file=voidlinux-musl.Dockerfile \
+        --tag=voidlinux/build .
 
-# Build proot inside the build container
-# This is required until proot release is made that includes https://github.com/proot-me/PRoot/pull/149
-docker run \
-    --rm --privileged --cap-add=SYS_ADMIN \
-    --volume=`pwd`/repo:/void-packages/hostdir/binpkgs \
-    voidlinux/build \
-    sh -c "\
-        cd void-packages && \
-        ./xbps-src pkg -j4 proot"
+    # Build proot inside the build container
+    # This is required until proot release is made that includes https://github.com/proot-me/PRoot/pull/149
+    docker run \
+        --rm --privileged --cap-add=SYS_ADMIN \
+        --volume=`pwd`/binpkgs:/void-packages/hostdir/binpkgs \
+        voidlinux/build \
+        sh -c "\
+            cd void-packages && \
+            ./xbps-src pkg -j4 proot"
+fi
 
 # Build the docker image
 docker build \
