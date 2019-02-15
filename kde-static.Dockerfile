@@ -13,7 +13,8 @@ RUN chmod go+r /usr/share/ca-certificates/$certificate
 RUN echo $certificate >> /etc/ca-certificates.conf && update-ca-certificates
 
 # Change mirror
-ARG mirror=alpha.de.repo.voidlinux.org
+ARG mirror
+ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
 RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
 RUN xbps-install --update --sync --yes
 

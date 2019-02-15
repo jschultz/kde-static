@@ -13,12 +13,13 @@ RUN chmod go+r /usr/share/ca-certificates/$certificate
 RUN echo $certificate >> /etc/ca-certificates.conf && update-ca-certificates
 
 # Change mirror
-ARG mirror=alpha.de.repo.voidlinux.org
+ARG mirror
+ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
 RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
 RUN xbps-install --update --sync --yes
 
 # Get voidlinux ready for building
 RUN xbps-install --yes xtools
 RUN git clone --depth 1 https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
-RUN cd void-packages && sed -i -e 's|alpha.de.repo.voidlinux.org|mirror.aarnet.edu.au/pub/voidlinux|g' etc/* && \
+RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/* && \
 	./xbps-src binary-bootstrap
