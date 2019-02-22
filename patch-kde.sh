@@ -27,6 +27,27 @@ index f76e077..8685a4d 100644
  
  include(CMakePackageConfigHelpers)
  include(ECMSetupVersion)
+diff --git a/src/kded.cpp b/src/kded.cpp
+index ed03dcd..172028f 100644
+--- a/src/kded.cpp
++++ b/src/kded.cpp
+@@ -51,6 +51,16 @@
+ #include <CoreFoundation/CoreFoundation.h>
+ #endif
+ 
++#ifndef BUILD_SHARED_LIBS
++#include <QtPlugin>
++#if HAVE_X11
++Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
++#endif
++#if defined _WIN32 || defined _WIN64
++Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
++#endif
++#endif
++
+ Q_DECLARE_LOGGING_CATEGORY(KDED)
+ 
+ Q_LOGGING_CATEGORY(KDED, "kf5.kded", QtWarningMsg)
 EOF
 ############ kjs ############
 echo Patching ./frameworks/kjs
@@ -2639,6 +2660,27 @@ index 834e2be..a13f5e3 100644
      endif()
      if (APPLE)
          set(_resourcefile ${MACOSX_BUNDLE_ICON_FILE})
+diff --git a/src/klauncher/klauncher_main.cpp b/src/klauncher/klauncher_main.cpp
+index 84224dd..afada3f 100644
+--- a/src/klauncher/klauncher_main.cpp
++++ b/src/klauncher/klauncher_main.cpp
+@@ -39,6 +39,16 @@
+ #include <CoreFoundation/CoreFoundation.h>
+ #endif
+ 
++#ifndef BUILD_SHARED_LIBS
++#include <QtPlugin>
++#if HAVE_X11
++Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
++#endif
++#if defined _WIN32 || defined _WIN64
++Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
++#endif
++#endif
++
+ #ifndef USE_KPROCESS_FOR_KIOSLAVES
+ static int sigpipe[ 2 ];
+ static void sig_handler(int sig_num)
 EOF
 ############ kdelibs4support ############
 echo Patching ./frameworks/kdelibs4support
@@ -3811,7 +3853,7 @@ index 70efcd716..3e3eb13eb 100644
  			return -1;
  		}
 diff --git a/generators/CMakeLists.txt b/generators/CMakeLists.txt
-index 6feec81b3..78240c02f 100644
+index 6feec81b3..fe322a933 100644
 --- a/generators/CMakeLists.txt
 +++ b/generators/CMakeLists.txt
 @@ -5,6 +5,25 @@ function(okular_add_generator _target)
@@ -3829,7 +3871,7 @@ index 6feec81b3..78240c02f 100644
 +    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "factory->registerPlugin<${class}>();\n")
 +    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "plugin = factory->create<Okular::Generator>();\n")
 +    file(READ "lib${_target}.json" json)
-+    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "service = KPluginMetaData(QJsonDocument::fromJson(R\"(${json})\").object(), QString(""));\n")
++    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "service = KPluginMetaData(QJsonDocument::fromJson(R\"|(${json})|\").object(), QString(""));\n")
 +    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "GeneratorInfo info_${class}( plugin, service );\n")
 +    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "s_availableGenerators.append( service );\n")
 +    file(APPEND ${CMAKE_BINARY_DIR}/generators_static.i "d->m_loadedGenerators.insert( service.pluginId(), info_${class} );\n")
@@ -3840,20 +3882,6 @@ index 6feec81b3..78240c02f 100644
  endfunction()
  
  set(LIBSPECTRE_MINIMUM_VERSION "0.2")
-@@ -128,11 +147,11 @@ endif(TIFF_FOUND)
- 
- add_subdirectory(xps)
- 
--add_subdirectory(ooo)
-+# add_subdirectory(ooo)
- 
- add_subdirectory(fictionbook)
- 
--add_subdirectory(comicbook)
-+# add_subdirectory(comicbook)
- 
- add_subdirectory(fax)
- 
 diff --git a/generators/chm/kio-msits/CMakeLists.txt b/generators/chm/kio-msits/CMakeLists.txt
 index 36e670628..e759c9e0e 100644
 --- a/generators/chm/kio-msits/CMakeLists.txt

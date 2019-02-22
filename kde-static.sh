@@ -65,10 +65,8 @@ docker cp kf5-frameworks-build-include $CONTAINER_NAME:/home/kdedev/kde
 # Copy our public key to the image for eash SSH access
 docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh
 
-# Prebuilt executables needed for cross-building
-docker cp hostapps $CONTAINER_NAME:/home/kdedev
-
 docker start $CONTAINER_NAME
 
 docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build libkexiv2"
 docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"

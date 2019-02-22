@@ -48,4 +48,5 @@ docker cp hostapps $CONTAINER_NAME:/home/kdedev
 docker start $CONTAINER_NAME
 
 docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build libkexiv2"
 docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build okular"
