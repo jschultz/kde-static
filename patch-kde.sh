@@ -2491,6 +2491,28 @@ index 31b456f..c6b280c 100644
  target_link_libraries(kmultipart
                          ${ZLIB_LIBRARY}
 EOF
+############ breeze-icons ############
+echo Patching ./frameworks/breeze-icons
+git -C ./frameworks/breeze-icons checkout .
+patch -p1 -d ./frameworks/breeze-icons <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c9040e6e..843256ae 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -52,7 +52,11 @@ function(generate_binary_resource target outfile)
+             ${RESOURCES_WORKING_DIR}/.gitignore
+             ${RESOURCES_WORKING_DIR}/CMakeLists.txt
+         COMMAND ${QT_RCC_EXECUTABLE} --project -o ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc
+-        COMMAND $<TARGET_FILE:qrcAlias> -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
++        if(CMAKE_CROSSCOMPILING AND QRCALIAS_EXECUTABLE)
++            COMMAND ${QRCALIAS_EXECUTABLE} -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
++        else()
++            COMMAND $<TARGET_FILE:qrcAlias> -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
++        endif()
+ 
+         WORKING_DIRECTORY ${RESOURCES_WORKING_DIR}
+         DEPENDS breeze-${target}-mkdir
+EOF
 ############ kdbusaddons ############
 echo Patching ./frameworks/kdbusaddons
 git -C ./frameworks/kdbusaddons checkout .
