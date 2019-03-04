@@ -2496,19 +2496,27 @@ echo Patching ./frameworks/breeze-icons
 git -C ./frameworks/breeze-icons checkout .
 patch -p1 -d ./frameworks/breeze-icons <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c9040e6e..843256ae 100644
+index c9040e6e..6b20b5ac 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -52,7 +52,11 @@ function(generate_binary_resource target outfile)
+@@ -44,6 +44,11 @@ function(generate_binary_resource target outfile)
+     add_custom_target(breeze-${target}-mkdir
+         COMMAND ${CMAKE_COMMAND} -E make_directory ${RESOURCES_WORKING_DIR}
+     )
++    if(CMAKE_CROSSCOMPILING AND QRCALIAS_EXECUTABLE)
++        set(command ${QRCALIAS_EXECUTABLE})
++    else()
++        set(command $<TARGET_FILE:qrcAlias>)
++    endif()
+     add_custom_command(OUTPUT ${RESOURCE_FILE}
+         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR} ${RESOURCES_WORKING_DIR}
+         COMMAND ${CMAKE_COMMAND} -E remove
+@@ -52,7 +57,7 @@ function(generate_binary_resource target outfile)
              ${RESOURCES_WORKING_DIR}/.gitignore
              ${RESOURCES_WORKING_DIR}/CMakeLists.txt
          COMMAND ${QT_RCC_EXECUTABLE} --project -o ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc
 -        COMMAND $<TARGET_FILE:qrcAlias> -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
-+        if(CMAKE_CROSSCOMPILING AND QRCALIAS_EXECUTABLE)
-+            COMMAND ${QRCALIAS_EXECUTABLE} -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
-+        else()
-+            COMMAND $<TARGET_FILE:qrcAlias> -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
-+        endif()
++        COMMAND ${command} -i ${CMAKE_CURRENT_BINARY_DIR}/tmp.qrc -o ${RESOURCE_FILE}
  
          WORKING_DIRECTORY ${RESOURCES_WORKING_DIR}
          DEPENDS breeze-${target}-mkdir
