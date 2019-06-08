@@ -40,7 +40,7 @@ docker cp $KDESRC_BUILDRC              $CONTAINER_NAME:/home/kdedev/kde/kdesrc-b
 docker cp kf5-frameworks-build-include $CONTAINER_NAME:/home/kdedev/kde
 
 # Copy our public key to the image for eash SSH access
-docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh
+docker cp $HOME/.ssh/id_rsa.pub $CONTAINER_NAME:/home/kdedev/.ssh/authorized_keys
 
 docker start $CONTAINER_NAME
 
