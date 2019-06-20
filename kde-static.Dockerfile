@@ -36,6 +36,9 @@ COPY binpkgs/* /home/kdedev/void-packages/hostdir/binpkgs/
 RUN sudo xbps-install --repository=void-packages/hostdir/binpkgs --yes proot
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
 
+# I don't understand why this does anything but it seems to make things work
+RUN xbps-install --update --sync --yes
+
 RUN sudo xbps-install --yes \
         base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel \
         cmake gperf ruby sqlite-devel libjpeg-turbo-devel icu-devel libxml++-devel libxslt-devel \

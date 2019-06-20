@@ -25,12 +25,15 @@ if ! test -f binpkgs/proot-*.x86_64-musl.xbps; then
 
     # Build proot inside the build container
     # This is required until proot release is made that includes https://github.com/proot-me/PRoot/pull/149
+    # No idea why the need to chown owner of volume within container but build fails with a permission error
+    # otherwise.
     docker run \
         --rm --privileged --cap-add=SYS_ADMIN \
         --volume=`pwd`/binpkgs:/void-packages/hostdir/binpkgs \
         voidlinux/build \
         sh -c "\
             cd void-packages && \
+            chown root.root /void-packages/hostdir/binpkgs && \
             ./xbps-src pkg -j4 proot"
 fi
 
