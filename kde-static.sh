@@ -14,6 +14,7 @@ cd $(dirname $(realpath $0))
 if ! test -f binpkgs/proot-*.x86_64-musl.xbps; then
     # Build the initial build container
     docker build \
+        --no-cache \
         --build-arg mirror=$mirror \
         --build-arg http_proxy=$http_proxy \
         --build-arg https_proxy=$https_proxy \
