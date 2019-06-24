@@ -1,0 +1,121 @@
+FROM voidlinux/voidlinux
+MAINTAINER Jonathan Schultz <jonathan@schultz.la>
+
+# Set up proxy
+# Save proxy for use after build - watch for secrets!
+ENV http_proxy  $http_proxy
+ENV https_proxy $https_proxy
+ENV ftp_proxy   $ftp_proxy
+
+# Copy certificate
+ARG certificate
+COPY $certificate /usr/share/ca-certificates
+RUN chmod go+r /usr/share/ca-certificates/$certificate
+RUN echo $certificate >> /etc/ca-certificates.conf && update-ca-certificates
+
+# Change mirror
+ARG mirror
+ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
+RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
+RUN xbps-install --update --sync --yes
+
+# Create kdedev user
+RUN xbps-install --yes sudo && echo 'kdedev ALL=NOPASSWD: ALL' >> /etc/sudoers && echo 'Defaults env_keep += "ftp_proxy http_proxy https_proxy"' >> /etc/sudoers
+RUN useradd kdedev
+USER kdedev
+WORKDIR /home/kdedev
+CMD bash
+
+# And some useful stuff for later on
+RUN sudo xbps-install --yes bash ncurses-term vim
+COPY .bashrc /home/kdedev
+RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
+RUN mkdir .ssh
+
+# Install build tools
+# RUN sudo xbps-install --yes \
+#         bash                \
+#         automake            \
+#         bison               \
+#         curl                \
+#         file                \
+#         flex                \
+#         git                 \
+#         libtool             \
+#         pkg-config          \
+#         python              \
+#         texinfo             \
+#         vim                 \
+#         wget                \
+#         make                \
+#         clang               \
+#         patch               \
+#         xz                  \
+#         cmake               \
+#         llvm7               \
+#         gcc
+
+RUN sudo xbps-install --yes \
+    bash \
+	git \
+    autoconf \
+    automake \
+    flex \
+    gcc \
+    gdk-pixbuf-devel \
+    gettext \
+    gettext-devel \
+    git \
+    gperf \
+    intltool \
+    libcurl-devel \
+    libtool \
+    lzip \
+    make \
+    p7zip \
+    patch \
+    perl-XML-Parser \
+    pkg-config \
+    python \
+    ruby \
+    unzip \
+    wget \
+    xz \
+    clang \
+    zlib-devel          \
+    gmp-devel           \
+    mpfr-devel          \
+    libmpc-devel        \
+    cmake               \
+    libxml2-devel
+
+
+# Install osxcross
+ARG sdk_filename
+ENV sdk_filename=$sdk_filename
+ARG sdk_version
+ENV sdk_version=$sdk_version
+ARG deployment_target
+ENV deployment_target=$deployment_target
+
+RUN git clone --depth=1 https://github.com/tpoechtrager/osxcross.git
+RUN cd osxcross && ./tools/get_dependencies.sh
+COPY $sdk_filename /home/kdedev/osxcross/tarballs
+RUN cd osxcross && UNATTENDED=1 OSX_VERSION_MIN=$deployment_target ./build.sh
+RUN cd osxcross && ./build_gcc.sh
+
+# /home/kdedev/osxcross/target/bin ???
+ENV PATH /home/kdedev/osxcross/target/bin:$PATH
+CMD /bin/bash
+
+# Make gcc the default compiler because clang seems to break things
+RUN sudo xbps-alternatives -s gcc
+
+# Install MXE cross-building environment
+# RUN git clone --depth 1 --branch x86_64-apple-darwin18 https://github.com/jschultz/mxe.git
+
+# ENV LDFLAGS -L/home/kdedev/mxe/usr/x86_64-apple-darwin15/lib
+# ENV CFLAGS -I/home/kdedev/mxe/usr/x86_64-apple-darwin15/include
+
+# Build Qt5 and other packages we'll need
+# RUN cd mxe && make qtbase
