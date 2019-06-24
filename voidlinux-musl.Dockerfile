@@ -16,7 +16,10 @@ RUN echo $certificate >> /etc/ca-certificates.conf && update-ca-certificates
 ARG mirror
 ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
 RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
-RUN xbps-install --update --sync --yes
+
+# Need to do sync/update in two stages because xbps needs to be update before remaining packages
+RUN xbps-install --sync --yes xbps
+RUN xbps-install --update --yes
 
 # Get voidlinux ready for building
 RUN xbps-install --yes xtools

@@ -39,6 +39,7 @@ fi
 
 # Build the docker image
 docker build \
+    --no-cache \
     --build-arg mirror=$mirror \
     --build-arg http_proxy=$http_proxy \
     --build-arg https_proxy=$https_proxy \

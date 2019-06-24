@@ -16,7 +16,10 @@ RUN echo $certificate >> /etc/ca-certificates.conf && update-ca-certificates
 ARG mirror
 ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
 RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
-RUN xbps-install --update --sync --yes
+
+# Need to do sync/update in two stages because xbps needs to be update before remaining packages
+RUN xbps-install --sync --yes xbps
+RUN xbps-install --update --yes
 
 # Create kdedev user
 RUN xbps-install --yes sudo && echo 'kdedev ALL=NOPASSWD: ALL' >> /etc/sudoers && echo 'Defaults env_keep += "ftp_proxy http_proxy https_proxy"' >> /etc/sudoers
@@ -35,9 +38,6 @@ RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/
 COPY binpkgs/* /home/kdedev/void-packages/hostdir/binpkgs/
 RUN sudo xbps-install --repository=void-packages/hostdir/binpkgs --yes proot
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
-
-# I don't understand why this does anything but it seems to make things work
-RUN xbps-install --update --sync --yes
 
 RUN sudo xbps-install --yes \
         base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel \
