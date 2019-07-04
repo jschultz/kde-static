@@ -11,8 +11,8 @@ DOCKERFILE=osxcross.Dockerfile
 SDK_FILENAME=MacOSX10.14.sdk.tar.bz2
 SDK_VERSION=10.14
 DEPLOYMENT_TARGET=10.12
-IMAGE_TAG=voidlinux/kde-osxcross$SDK_VERSION
-CONTAINER_NAME=kde-osxcross$SDK_VERSION
+IMAGE_TAG=voidlinux/kde-osxcross
+CONTAINER_NAME=kde-osxcross
 cd $(dirname $(realpath $0))
 
 # Build the docker image

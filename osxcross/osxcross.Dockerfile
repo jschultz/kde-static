@@ -19,6 +19,10 @@ ENV mirror ${mirror:-alpha.de.repo.voidlinux.org}
 RUN cp /usr/share/xbps.d/*repository* /etc/xbps.d && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" /etc/xbps.d/*repository*
 RUN xbps-install --update --sync --yes
 
+# Need to do sync/update in two stages because xbps needs to be update before remaining packages
+RUN xbps-install --sync --yes xbps
+RUN xbps-install --update --yes
+
 # Create kdedev user
 RUN xbps-install --yes sudo && echo 'kdedev ALL=NOPASSWD: ALL' >> /etc/sudoers && echo 'Defaults env_keep += "ftp_proxy http_proxy https_proxy"' >> /etc/sudoers
 RUN useradd kdedev
@@ -31,29 +35,6 @@ RUN sudo xbps-install --yes bash ncurses-term vim
 COPY .bashrc /home/kdedev
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
 RUN mkdir .ssh
-
-# Install build tools
-# RUN sudo xbps-install --yes \
-#         bash                \
-#         automake            \
-#         bison               \
-#         curl                \
-#         file                \
-#         flex                \
-#         git                 \
-#         libtool             \
-#         pkg-config          \
-#         python              \
-#         texinfo             \
-#         vim                 \
-#         wget                \
-#         make                \
-#         clang               \
-#         patch               \
-#         xz                  \
-#         cmake               \
-#         llvm7               \
-#         gcc
 
 RUN sudo xbps-install --yes \
     bash \
@@ -102,7 +83,8 @@ RUN git clone --depth=1 https://github.com/tpoechtrager/osxcross.git
 RUN cd osxcross && ./tools/get_dependencies.sh
 COPY $sdk_filename /home/kdedev/osxcross/tarballs
 RUN cd osxcross && UNATTENDED=1 OSX_VERSION_MIN=$deployment_target ./build.sh
-RUN cd osxcross && ./build_gcc.sh
+RUN sudo xbps-install --yes llvm
+RUN cd osxcross && ./build_compiler_rt.sh
 
 # /home/kdedev/osxcross/target/bin ???
 ENV PATH /home/kdedev/osxcross/target/bin:$PATH
