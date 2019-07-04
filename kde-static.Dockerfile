@@ -79,12 +79,13 @@ RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --
 RUN sudo xbps-install -y wget xz libaccounts-glib-devel doxygen
 COPY qt.musl.patch /home/kdedev
 COPY config.opt /home/kdedev
+COPY qtnetwork-5.12.4-libressl.patch /home/kdedev
 RUN sudo sh -c 'printf -- "-static\n-release\n" >> config.opt'
 COPY libaccounts.patch /home/kdedev
 COPY signon.patch /home/kdedev
 RUN wget -qO- http://download.qt.io/official_releases/qt/5.12/5.12.4/single/qt-everywhere-src-5.12.4.tar.xz | tar xJ && \
 	patch -d ~/qt-everywhere-src-5.12.4 -p0 < ~/qt.musl.patch && \
-	wget -qO- https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.12.1-libressl.patch | patch -d ~/qt-everywhere-src-5.12.4/qtbase -p1 && \
+	patch -d ~/qt-everywhere-src-5.12.4/qtbase -p1 < qtnetwork-5.12.4-libressl.patch && \
 	mv ~/config.opt ~/qt-everywhere-src-5.12.4 && \
 	cd ~/qt-everywhere-src-5.12.4 && ./configure -redo && make -j4 -Oline && make -j4 install && \
 	cd ~ && rm -r ~/qt-everywhere-src-5.12.4 && \
