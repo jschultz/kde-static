@@ -1,5 +1,5 @@
 -prefix
-/home/kdedev/qt-everywhere-5.11.3
+/home/kdedev/qt-everywhere-5.12.4
 -qt-zlib
 -qt-pcre
 -qt-libpng

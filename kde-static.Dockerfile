@@ -89,27 +89,27 @@ RUN wget -qO- http://download.qt.io/official_releases/qt/5.12/5.12.4/single/qt-e
 	mv ~/config.opt ~/qt-everywhere-src-5.12.4 && \
 	cd ~/qt-everywhere-src-5.12.4 && ./configure -redo && make -j4 -Oline && make -j4 install && \
 	cd ~ && rm -r ~/qt-everywhere-src-5.12.4 && \
-	export PATH=/home/kdedev/qt-everywhere-5.11.3/bin:$PATH && \
-	wget -qO- http://download.qt.io/snapshots/ci/qtwebkit/5.212/1515668564/src/submodules/qtwebkit-everywhere-src-5.212.tar.xz | tar xJ && \
+	export PATH=/home/kdedev/qt-everywhere-5.12.4/bin:$PATH && \
+	wget -qO- http://download.qt.io/snapshots/ci/qtweb kit/5.212/1515668564/src/submodules/qtwebkit-everywhere-src-5.212.tar.xz | tar xJ && \
 	cd qtwebkit-everywhere-src-5.212 && \
-    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=Release -DQt5_DIR=/home/kdedev/qt-everywhere-5.11.3 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.11.3/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.11.3 -DENABLE_SAMPLING_PROFILER=0 -DUSE_THIN_ARCHIVES=OFF && \
+    cmake -DPORT=Qt -DCMAKE_BUILD_TYPE=Release -DQt5_DIR=/home/kdedev/qt-everywhere-5.12.4 -DCMAKE_PREFIX_PATH=/home/kdedev/qt-everywhere-5.12.4/lib/cmake -DCMAKE_INSTALL_PREFIX=/home/kdedev/qt-everywhere-5.12.4 -DENABLE_SAMPLING_PROFILER=0 -DUSE_THIN_ARCHIVES=OFF && \
     make -j4 && make -j4 install && \
     cd ~ && rm -r ~/qtwebkit-everywhere-src-5.212 && \
 	wget -qO- https://gitlab.com/accounts-sso/libaccounts-qt/-/archive/master/libaccounts-qt-master.tar.gz | tar xz &&\
 	cd ~/libaccounts-qt-master && \
     patch -p0 < /home/kdedev/libaccounts.patch && \
-    qmake PREFIX=/home/kdedev/qt-everywhere-5.11.3 && \
+    qmake PREFIX=/home/kdedev/qt-everywhere-5.12.4 && \
     make -j4 -Oline && make -j4 install && \
     cd ~ && rm -r ~/libaccounts-qt-master && \
 	wget -qO- https://gitlab.com/accounts-sso/signond/-/archive/master/signond-master.tar.gz | tar xz && \
 	cd ~/signond-master && \
     patch -p0 < /home/kdedev/signon.patch && \
-    qmake PREFIX=/home/kdedev/qt-everywhere-5.11.3 && \
+    qmake PREFIX=/home/kdedev/qt-everywhere-5.12.4 && \
     make -j4 -Oline && make -j4 install && \
     cd ~ && rm -r ~/signond-master
 
 # Make path change permanent
-ENV PATH /home/kdedev/qt-everywhere-5.11.3/bin:$PATH
+ENV PATH /home/kdedev/qt-everywhere-5.12.4/bin:$PATH
 
 # Install kdesrc-build
 RUN sudo xbps-install -y git perl-YAML-LibYAML
