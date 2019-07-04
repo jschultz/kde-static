@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+. ./local-env
+
 SOURCEDIR=$HOME/src/kde/source
 INSTALLDIR=$HOME/src/kde/install-static
 KDESRC_BUILDRC=kdesrc-buildrc-static
@@ -34,6 +36,7 @@ if ! test -f binpkgs/proot-*.x86_64-musl.xbps; then
         sh -c "\
             cd void-packages && \
             chown root.root /void-packages/hostdir/binpkgs && \
+            ./xbps-src binary-bootstrap && \
             ./xbps-src pkg -j4 proot"
 fi
 

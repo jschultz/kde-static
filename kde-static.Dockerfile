@@ -31,13 +31,13 @@ CMD bash
 # Get voidlinux ready for building
 RUN sudo xbps-install --yes xtools
 RUN git clone --depth 1 https://github.com/jschultz/void-packages
-RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/* && \
-	./xbps-src binary-bootstrap
-
-# Install patched version of proot
 COPY binpkgs/* /home/kdedev/void-packages/hostdir/binpkgs/
+RUN sudo chown -R kdedev.kdedev /home/kdedev/void-packages/hostdir
 RUN sudo xbps-install --repository=void-packages/hostdir/binpkgs --yes proot
 RUN echo XBPS_CHROOT_CMD=proot >> void-packages/etc/conf
+
+RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/* && \
+	./xbps-src binary-bootstrap
 
 RUN sudo xbps-install --yes \
         base-devel MesaLib-devel freetype-devel fontconfig-devel libressl-devel \
@@ -49,12 +49,12 @@ RUN sudo xbps-install --yes \
 
 
 # Rebuild xbps because of redirection problem: https://github.com/voidlinux/xbps/issues/295
-RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/xbps-*.xbps ; then cd void-packages && ./xbps-src pkg -j4 xbps; fi
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes xbps libxbps
-RUN sudo sh -c "echo repository=/home/kdedev/void-packages/hostdir/binpkgs > /etc/xbps.d/00-repository-local.conf"
+# RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/xbps-*.xbps ; then cd void-packages && ./xbps-src pkg -j4 xbps; fi
+# RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes xbps libxbps
+# RUN sudo sh -c "echo repository=/home/kdedev/void-packages/hostdir/binpkgs > /etc/xbps.d/00-repository-local.conf"
 
 # Now update build packages to pick up fixed xbps
-RUN cp -r /home/kdedev/void-packages/hostdir/binpkgs void-packages/masterdir/host && cd void-packages && ./xbps-src zap && ./xbps-src binary-bootstrap
+# RUN cp -r /home/kdedev/void-packages/hostdir/binpkgs void-packages/masterdir/host && cd void-packages && ./xbps-src zap && ./xbps-src binary-bootstrap
 
 # Build packages
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/fontconfig-devel-*.xbps;       then cd void-packages && ./xbps-src pkg -j4 fontconfig-devel; fi
@@ -82,7 +82,7 @@ COPY config.opt /home/kdedev
 RUN sudo sh -c 'printf -- "-static\n-release\n" >> config.opt'
 COPY libaccounts.patch /home/kdedev
 COPY signon.patch /home/kdedev
-RUN wget -qO- http://download.qt.io/official_releases/qt/5.11/5.11.3/single/qt-everywhere-src-5.11.3.tar.xz | tar xJ && \
+RUN wget -qO- http://download.qt.io/archive/qt/5.11/5.11.3/single/qt-everywhere-src-5.11.3.tar.xz | tar xJ && \
 	patch -d ~/qt-everywhere-src-5.11.3 -p0 < ~/qt.musl.patch && \
 	wget -qO- https://raw.githubusercontent.com/gentoo/libressl/master/dev-qt/qtnetwork/files/qtnetwork-5.11.3-libressl-2.8.patch | patch -d ~/qt-everywhere-src-5.11.3/qtbase -p1 && \
 	mv ~/config.opt ~/qt-everywhere-src-5.11.3 && \

@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+. ./local-env
+
 SOURCEDIR=$HOME/src/kde/source
 INSTALLDIR=$HOME/src/kde/install-dynamic
 KDESRC_BUILDRC=kdesrc-buildrc-dynamic

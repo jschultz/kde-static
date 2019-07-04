@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e  # Exit immediately on error
 
+. ./local-env
+
 SOURCEDIR=$HOME/src/kde/source
 INSTALLDIR=$HOME/src/kde/install-mingw
 KDESRC_BUILDRC=kdesrc-buildrc-mingw

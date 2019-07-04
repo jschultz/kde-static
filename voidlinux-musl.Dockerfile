@@ -23,6 +23,5 @@ RUN xbps-install --update --yes
 
 # Get voidlinux ready for building
 RUN xbps-install --yes xtools
-RUN git clone --depth 1 https://github.com/jschultz/void-packages && cd void-packages && ./xbps-src binary-bootstrap
-RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/* && \
-	./xbps-src binary-bootstrap
+RUN git clone --depth 1 https://github.com/jschultz/void-packages
+RUN cd void-packages && sed -i -e "s|alpha.de.repo.voidlinux.org|$mirror|g" etc/*
