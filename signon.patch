@@ -8,4 +8,11 @@
 +SUBDIRS   = lib
  src.depends = lib
  tests.depends = lib src
- 
+
+--- lib/SignOn/libsignon-qt-shared.pro.bak      2019-07-11 13:29:38.242902965 +0000
++++ lib/SignOn/libsignon-qt-shared.pro  2019-07-11 13:25:33.948252779 +0000
+@@ -1,3 +1,4 @@
+ include(libsignon-qt.pri)
+ CONFIG += shared
+ QMAKE_CXXFLAGS += -fvisibility=hidden
++LIBS += -L/home/kdedev/qt-everywhere-5.12.4/lib
