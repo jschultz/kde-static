@@ -59,7 +59,7 @@ RUN sudo xbps-install --yes \
 # Build packages
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/fontconfig-devel-*.xbps;       then cd void-packages && ./xbps-src pkg -j4 fontconfig-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/dbus-devel-*.xbps;             then cd void-packages && ./xbps-src pkg -j4 dbus-devel; fi
-RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/dbus-devel-*.xbps;             then cd void-packages && ./xbps-src pkg -j4 dbus-devel; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/icu-devel-*.xbps;              then cd void-packages && ./xbps-src pkg -j4 icu-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libxslt-devel-*.xbps;          then cd void-packages && ./xbps-src pkg -j4 libxslt-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libgpg-error-devel-*.xbps;     then cd void-packages && ./xbps-src pkg -j4 libgpg-error-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libxcb-devel-*.xbps;           then cd void-packages && ./xbps-src pkg -j4 libxcb-devel; fi
