@@ -28,10 +28,10 @@ index f76e077..8685a4d 100644
  include(CMakePackageConfigHelpers)
  include(ECMSetupVersion)
 diff --git a/src/kded.cpp b/src/kded.cpp
-index ed03dcd..172028f 100644
+index ed03dcd..a5cbf90 100644
 --- a/src/kded.cpp
 +++ b/src/kded.cpp
-@@ -51,6 +51,16 @@
+@@ -51,6 +51,19 @@
  #include <CoreFoundation/CoreFoundation.h>
  #endif
  
@@ -42,6 +42,9 @@ index ed03dcd..172028f 100644
 +#endif
 +#if defined _WIN32 || defined _WIN64
 +Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
++#endif
++#ifdef __APPLE__
++Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
 +#endif
 +#endif
 +
@@ -2187,6 +2190,35 @@ index 6b2579a..419882a 100644
  set_package_properties(KF5Attica PROPERTIES DESCRIPTION "A Qt library that implements the Open Collaboration Services API"
                         PURPOSE "Support for Get Hot New Stuff in KXMLGUI"
                         URL "https://projects.kde.org/attica"
+diff --git a/src/kxmlguiclient.cpp b/src/kxmlguiclient.cpp
+index 0ea6419..dc70fe9 100644
+--- a/src/kxmlguiclient.cpp
++++ b/src/kxmlguiclient.cpp
+@@ -201,7 +201,12 @@ void KXMLGUIClient::setComponentName(const QString &componentName, const QString
+ 
+ QString KXMLGUIClient::standardsXmlFileLocation()
+ {
++#ifdef __APPLE__
++    // Look in app bundle
++    QString file = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("ui_standards.rc"));
++#else
+     QString file = QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("ui/ui_standards.rc"));
++#endif
+     if (file.isEmpty()) {
+         // fallback to resource, to allow to use the rc file compiled into this framework, must exist!
+         file = QStringLiteral(":/kxmlgui5/ui_standards.rc");
+@@ -233,6 +238,11 @@ void KXMLGUIClient::setXMLFile(const QString &_file, bool merge, bool setXMLDoc)
+     } else {
+         const QString filter = componentName() + QLatin1Char('/') + _file;
+ 
++#ifdef __APPLE__
++        // Look in app bundle
++        allFiles << QStandardPaths::locateAll(QStandardPaths::AppDataLocation, file);
++#endif
++
+         // files on filesystem
+         allFiles << QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("kxmlgui5/") + filter); // KF >= 5.1
+ 
 EOF
 ############ prison ############
 echo Patching ./frameworks/prison
@@ -2691,10 +2723,10 @@ index 834e2be..a13f5e3 100644
      if (APPLE)
          set(_resourcefile ${MACOSX_BUNDLE_ICON_FILE})
 diff --git a/src/klauncher/klauncher_main.cpp b/src/klauncher/klauncher_main.cpp
-index 84224dd..afada3f 100644
+index 84224dd..0563987 100644
 --- a/src/klauncher/klauncher_main.cpp
 +++ b/src/klauncher/klauncher_main.cpp
-@@ -39,6 +39,16 @@
+@@ -39,6 +39,19 @@
  #include <CoreFoundation/CoreFoundation.h>
  #endif
  
@@ -2705,6 +2737,9 @@ index 84224dd..afada3f 100644
 +#endif
 +#if defined _WIN32 || defined _WIN64
 +Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
++#endif
++#ifdef __APPLE__
++Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
 +#endif
 +#endif
 +
@@ -3274,7 +3309,7 @@ index 7c5476e..e42cc5e 100644
      TARGET_LINK_LIBRARIES(${_logical_name} ${PYTHON_LIBRARY})
      TARGET_LINK_LIBRARIES(${_logical_name} ${EXTRA_LINK_LIBRARIES})
 diff --git a/kde-modules/KDECMakeSettings.cmake b/kde-modules/KDECMakeSettings.cmake
-index 17d79a0..a329fa2 100644
+index 3f7f5a8..de75157 100644
 --- a/kde-modules/KDECMakeSettings.cmake
 +++ b/kde-modules/KDECMakeSettings.cmake
 @@ -174,6 +174,30 @@ if(NOT KDE_SKIP_RPATH_SETTINGS)
@@ -3308,6 +3343,19 @@ index 17d79a0..a329fa2 100644
  ################ Testing setup ####################################
  
  find_program(APPSTREAMCLI appstreamcli)
+diff --git a/kde-modules/KDEInstallDirs.cmake b/kde-modules/KDEInstallDirs.cmake
+index 52b2eb2..7296c8e 100644
+--- a/kde-modules/KDEInstallDirs.cmake
++++ b/kde-modules/KDEInstallDirs.cmake
+@@ -419,7 +419,7 @@ macro(_define_non_cache varname value)
+ endmacro()
+ 
+ if(APPLE)
+-    _define_absolute(BUNDLEDIR "/Applications/KDE"
++    _define_absolute(BUNDLEDIR "${CMAKE_INSTALL_PREFIX}/Applications/KDE"
+         "application bundles"
+         BUNDLE_INSTALL_DIR)
+ endif()
 diff --git a/tests/ECMPoQmToolsTest/CMakeLists.txt b/tests/ECMPoQmToolsTest/CMakeLists.txt
 index 2cd76f8..3496528 100644
 --- a/tests/ECMPoQmToolsTest/CMakeLists.txt
@@ -3451,6 +3499,19 @@ EOF
 echo Patching ./kdesupport/phonon/phonon
 git -C ./kdesupport/phonon/phonon checkout .
 patch -p1 -d ./kdesupport/phonon/phonon <<'EOF'
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e432e898..b843dd44 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,6 @@
+-project(Phonon)
+-
+ cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
++cmake_policy(SET CMP0025 NEW)
++project(Phonon)
+ add_definitions(-DPHONON_BUILD_WITH_CMAKE)
+ 
+ option(PHONON_ASSERT_STATES "Enable code to assert backend state transitions" ON)
 diff --git a/cmake/PhononMacros.cmake b/cmake/PhononMacros.cmake
 index f829a486..115b32ae 100644
 --- a/cmake/PhononMacros.cmake
@@ -3688,7 +3749,7 @@ echo Patching ./kde/kdegraphics/okular
 git -C ./kde/kdegraphics/okular checkout .
 patch -p1 -d ./kde/kdegraphics/okular <<'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ec02d4d9e..22347b5d8 100644
+index eadde9227..d8776e43a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -32,7 +32,20 @@ ecm_setup_version(${PROJECT_VERSION}
@@ -3722,18 +3783,7 @@ index ec02d4d9e..22347b5d8 100644
  
  if(KF5Wallet_FOUND)
      add_definitions(-DWITH_KWALLET=1)
-@@ -96,7 +112,9 @@ set_package_properties(KF5Kirigami2 PROPERTIES
-     TYPE RUNTIME
- )
- find_package(Phonon4Qt5 CONFIG REQUIRED)
--find_package(KDEExperimentalPurpose)
-+if(NOT WIN32)  # Just a guess
-+    find_package(KDEExperimentalPurpose)
-+endif()
- set_package_properties(KDEExperimentalPurpose PROPERTIES
-     DESCRIPTION "A framework for services and actions integration"
-     PURPOSE "Required for enabling the share menu in Okular"
-@@ -142,8 +160,8 @@ if(BUILD_COVERAGE)
+@@ -142,8 +158,8 @@ if(BUILD_COVERAGE)
  endif()
  
  add_subdirectory( ui )
@@ -3743,7 +3793,7 @@ index ec02d4d9e..22347b5d8 100644
  if(BUILD_TESTING)
     add_subdirectory( autotests )
     add_subdirectory( conf/autotests )
-@@ -247,7 +265,12 @@ ki18n_wrap_ui(okularcore_SRCS
+@@ -251,7 +267,12 @@ ki18n_wrap_ui(okularcore_SRCS
  
  kconfig_add_kcfg_files(okularcore_SRCS conf/settings_core.kcfgc)
  
@@ -3757,7 +3807,7 @@ index ec02d4d9e..22347b5d8 100644
  generate_export_header(okularcore BASE_NAME okularcore EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/core/okularcore_export.h")
  
  if (ANDROID)
-@@ -282,6 +305,7 @@ PRIVATE
+@@ -286,6 +307,7 @@ PRIVATE
      Phonon::phonon4qt5
      ${MATH_LIB}
      ${ZLIB_LIBRARIES}
@@ -3765,7 +3815,7 @@ index ec02d4d9e..22347b5d8 100644
  PUBLIC  # these are included from the installed headers
      KF5::CoreAddons
      KF5::XmlGui
-@@ -290,7 +314,6 @@ PUBLIC  # these are included from the installed headers
+@@ -294,7 +316,6 @@ PUBLIC  # these are included from the installed headers
      Qt5::Widgets
  )
  
@@ -3773,7 +3823,7 @@ index ec02d4d9e..22347b5d8 100644
  if (KF5Wallet_FOUND)
      target_link_libraries(okularcore PRIVATE KF5::Wallet)
  endif()
-@@ -400,7 +423,7 @@ ki18n_wrap_ui(okularpart_SRCS
+@@ -410,7 +431,7 @@ ki18n_wrap_ui(okularpart_SRCS
  
  kconfig_add_kcfg_files(okularpart_SRCS conf/settings.kcfgc)
  
@@ -3782,18 +3832,57 @@ index ec02d4d9e..22347b5d8 100644
  generate_export_header(okularpart BASE_NAME okularpart)
  
  target_link_libraries(okularpart okularcore
+@@ -451,7 +472,7 @@ install(TARGETS okularpart DESTINATION ${KDE_INSTALL_PLUGINDIR})
+ install(FILES okular.upd DESTINATION ${KDE_INSTALL_DATADIR}/kconf_update)
+ 
+ install( FILES okular_part.desktop  DESTINATION  ${KDE_INSTALL_KSERVICES5DIR} )
+-install( FILES part.rc part-viewermode.rc DESTINATION ${KDE_INSTALL_KXMLGUI5DIR}/okular )
++install( FILES part.rc part-viewermode.rc DESTINATION ${KXMLGUI_INSTALL_DIR}/okular )
+ 
+ if (${ECM_VERSION} STRGREATER "5.58.0")
+     install(FILES okular.categories  DESTINATION  ${KDE_INSTALL_LOGGINGCATEGORIESDIR})
+diff --git a/conf/okular.kcfg b/conf/okular.kcfg
+index 8b2f356af..37cdd03f9 100644
+--- a/conf/okular.kcfg
++++ b/conf/okular.kcfg
+@@ -45,7 +45,12 @@
+     <code>
+       QStringList drawingTools;
+       // load the default tool list from the 'xml tools definition' file
++#ifdef __APPLE__
++      // Look in app bundle
++      QFile infoDrawingFile( QStandardPaths::locate(QStandardPaths::AppDataLocation, "drawingtools.xml") );
++#else
+       QFile infoDrawingFile( QStandardPaths::locate(QStandardPaths::GenericDataLocation, "okular/drawingtools.xml") );
++#endif
+       if ( infoDrawingFile.exists() &amp;&amp; infoDrawingFile.open( QIODevice::ReadOnly ) )
+       {
+           QDomDocument doc;
+@@ -83,7 +88,12 @@
+     <code>
+       QStringList annotationTools;
+       // load the default tool list from the 'xml tools definition' file
++#ifdef __APPLE__
++      // Look in app bundle
++      QFile infoFile( QStandardPaths::locate(QStandardPaths::AppDataLocation, "tools.xml") );
++#else
+       QFile infoFile( QStandardPaths::locate(QStandardPaths::GenericDataLocation, "okular/tools.xml") );
++#endif
+       if ( infoFile.exists() &amp;&amp; infoFile.open( QIODevice::ReadOnly ) )
+       {
+           QDomDocument doc;
 diff --git a/config-okular.h.cmake b/config-okular.h.cmake
-index 0caea358a..6311b2ec0 100644
+index b999a1c39..00c81b5b4 100644
 --- a/config-okular.h.cmake
 +++ b/config-okular.h.cmake
 @@ -7,3 +7,5 @@
- /* Defines if the purpose framework is available */
+ /* Defines whether the malloc_trim method from malloc.h is available */
  #cmakedefine01 HAVE_MALLOC_TRIM
  
 +#cmakedefine01 HAVE_X11
 +
 diff --git a/core/document.cpp b/core/document.cpp
-index 3332c3a89..08a8fd067 100644
+index f33fbfea5..9e3ec6ca3 100644
 --- a/core/document.cpp
 +++ b/core/document.cpp
 @@ -45,6 +45,9 @@
@@ -3818,7 +3907,7 @@ index 3332c3a89..08a8fd067 100644
  using namespace Okular;
  
  struct AllocatedPixmap
-@@ -2215,6 +2223,13 @@ Document::Document( QWidget *widget )
+@@ -2218,6 +2226,13 @@ Document::Document( QWidget *widget )
      connect(d->m_undoStack, &QUndoStack::cleanChanged, this, &Document::undoHistoryCleanChanged);
  
      qRegisterMetaType<Okular::FontInfo>();
@@ -3832,12 +3921,12 @@ index 3332c3a89..08a8fd067 100644
  }
  
  Document::~Document()
-@@ -2281,7 +2296,11 @@ QVector<KPluginMetaData> DocumentPrivate::availableGenerators()
+@@ -2284,7 +2299,11 @@ QVector<KPluginMetaData> DocumentPrivate::availableGenerators()
      static QVector<KPluginMetaData> result;
      if (result.isEmpty())
      {
 +#ifdef BUILD_SHARED_LIBS
-         result = KPluginLoader::findPlugins( QLatin1String ( "okular/generators" ) );
+         result = KPluginLoader::findPlugins( QStringLiteral ( "okular/generators" ) );
 +#else
 +        result = s_availableGenerators;
 +#endif
@@ -3845,10 +3934,10 @@ index 3332c3a89..08a8fd067 100644
      return result;
  }
 diff --git a/core/document.h b/core/document.h
-index 37cad1f1d..fec3b6162 100644
+index 55e8fa197..e9f1e94a7 100644
 --- a/core/document.h
 +++ b/core/document.h
-@@ -28,6 +28,10 @@
+@@ -28,11 +28,18 @@
  #include <QMimeType>
  #include <QUrl>
  
@@ -3856,10 +3945,8 @@ index 37cad1f1d..fec3b6162 100644
 +#include <KPluginFactory>
 +#endif
 +
- class QPrintDialog;
- class KBookmark;
  class KConfigDialog;
-@@ -35,6 +39,9 @@ class KPluginMetaData;
+ class KPluginMetaData;
  class KXMLGUIClient;
  class DocumentItem;
  class QAbstractItemModel;
@@ -3939,7 +4026,7 @@ index 2de7e1835..f4ee4aedc 100644
  class QTextDocument;
  
 diff --git a/generators/poppler/generator_pdf.h b/generators/poppler/generator_pdf.h
-index 4439a1144..1ce7bf614 100644
+index 9c99a3e2f..4f9bf83fd 100644
 --- a/generators/poppler/generator_pdf.h
 +++ b/generators/poppler/generator_pdf.h
 @@ -16,7 +16,7 @@
@@ -3952,12 +4039,12 @@ index 4439a1144..1ce7bf614 100644
  
  #include <qbitarray.h>
 diff --git a/mobile/components/CMakeLists.txt b/mobile/components/CMakeLists.txt
-index f2529f78a..bd52e3770 100644
+index 88c9b7ac5..140cea14a 100644
 --- a/mobile/components/CMakeLists.txt
 +++ b/mobile/components/CMakeLists.txt
 @@ -22,7 +22,7 @@ set(okular_SRCS
  
- kconfig_add_kcfg_files(okular_SRCS ${CMAKE_SOURCE_DIR}/conf/settings.kcfgc )
+ kconfig_add_kcfg_files(okular_SRCS ${CMAKE_SOURCE_DIR}/conf/settings_mobile.kcfgc)
  
 -add_library(okularplugin SHARED ${okular_SRCS})
 +add_library(okularplugin ${okular_SRCS})
@@ -3965,7 +4052,7 @@ index f2529f78a..bd52e3770 100644
  target_link_libraries(okularplugin
          Qt5::Quick
 diff --git a/shell/CMakeLists.txt b/shell/CMakeLists.txt
-index 628f74be1..26c08baec 100644
+index 628f74be1..e1d7af430 100644
 --- a/shell/CMakeLists.txt
 +++ b/shell/CMakeLists.txt
 @@ -18,7 +18,11 @@ ecm_add_app_icon(okular_SRCS ICONS ${ICONS_SRCS})
@@ -3981,11 +4068,18 @@ index 628f74be1..26c08baec 100644
  if(TARGET KF5::Activities)
      target_compile_definitions(okular PUBLIC -DWITH_KACTIVITIES=1)
  
+@@ -31,5 +35,5 @@ install(TARGETS okular ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+ # okular shell data files
+ 
+ install( PROGRAMS org.kde.okular.desktop  DESTINATION  ${KDE_INSTALL_APPDIR} )
+-install( FILES shell.rc DESTINATION ${KDE_INSTALL_KXMLGUI5DIR}/okular )
++install( FILES shell.rc DESTINATION ${KXMLGUI_INSTALL_DIR}/okular )
+ install( FILES org.kde.okular.appdata.xml DESTINATION  ${KDE_INSTALL_METAINFODIR} )
 diff --git a/shell/main.cpp b/shell/main.cpp
-index 983690d08..df128a2de 100644
+index 3c4bb4723..84965977c 100644
 --- a/shell/main.cpp
 +++ b/shell/main.cpp
-@@ -28,6 +28,18 @@
+@@ -29,6 +29,21 @@
  #include "okular_main.h"
  #include "shellutils.h"
  
@@ -3999,13 +4093,16 @@ index 983690d08..df128a2de 100644
 +#if defined _WIN32 || defined _WIN64
 +Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 +#endif
++#ifdef __APPLE__
++Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
++#endif
 +#endif
 +
  int main(int argc, char** argv)
  {
      QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 diff --git a/shell/shell.cpp b/shell/shell.cpp
-index d3f0b3e49..a44085ec1 100644
+index 8c0c62e5b..8a6e9ddba 100644
 --- a/shell/shell.cpp
 +++ b/shell/shell.cpp
 @@ -53,6 +53,10 @@
@@ -4052,7 +4149,7 @@ index d3f0b3e49..a44085ec1 100644
    // now that the Part plugin is loaded, create the part
    KParts::ReadWritePart* const firstPart = m_partFactory->create< KParts::ReadWritePart >( this );
 diff --git a/ui/annotwindow.cpp b/ui/annotwindow.cpp
-index d09a4f026..d65cda08f 100644
+index e4d94b39e..c5fdba0c6 100644
 --- a/ui/annotwindow.cpp
 +++ b/ui/annotwindow.cpp
 @@ -40,13 +40,13 @@
@@ -4081,15 +4178,64 @@ index d09a4f026..d65cda08f 100644
          buttonlay->addWidget( close );
          // option button row
 EOF
+############ barraqda ############
+echo Patching ./kde/kdegraphics/barraqda
+git -C ./kde/kdegraphics/barraqda checkout .
+patch -p1 -d ./kde/kdegraphics/barraqda <<'EOF'
+diff --git a/conf/okular.kcfg b/conf/okular.kcfg
+index 8b2f356a..37cdd03f 100644
+--- a/conf/okular.kcfg
++++ b/conf/okular.kcfg
+@@ -45,7 +45,12 @@
+     <code>
+       QStringList drawingTools;
+       // load the default tool list from the 'xml tools definition' file
++#ifdef __APPLE__
++      // Look in app bundle
++      QFile infoDrawingFile( QStandardPaths::locate(QStandardPaths::AppDataLocation, "drawingtools.xml") );
++#else
+       QFile infoDrawingFile( QStandardPaths::locate(QStandardPaths::GenericDataLocation, "okular/drawingtools.xml") );
++#endif
+       if ( infoDrawingFile.exists() &amp;&amp; infoDrawingFile.open( QIODevice::ReadOnly ) )
+       {
+           QDomDocument doc;
+@@ -83,7 +88,12 @@
+     <code>
+       QStringList annotationTools;
+       // load the default tool list from the 'xml tools definition' file
++#ifdef __APPLE__
++      // Look in app bundle
++      QFile infoFile( QStandardPaths::locate(QStandardPaths::AppDataLocation, "tools.xml") );
++#else
+       QFile infoFile( QStandardPaths::locate(QStandardPaths::GenericDataLocation, "okular/tools.xml") );
++#endif
+       if ( infoFile.exists() &amp;&amp; infoFile.open( QIODevice::ReadOnly ) )
+       {
+           QDomDocument doc;
+diff --git a/shell/main.cpp b/shell/main.cpp
+index 82dadf07..a265966b 100644
+--- a/shell/main.cpp
++++ b/shell/main.cpp
+@@ -38,6 +38,9 @@ Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
+ #if defined _WIN32 || defined _WIN64
+ Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+ #endif
++#ifdef __APPLE__
++Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
++#endif
+ #endif
+ 
+ int main(int argc, char** argv)
+EOF
 ############ libkexiv2 ############
 echo Patching ./kde/kdegraphics/libs/libkexiv2
 git -C ./kde/kdegraphics/libs/libkexiv2 checkout .
 patch -p1 -d ./kde/kdegraphics/libs/libkexiv2 <<'EOF'
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 2b2df03..ba512ee 100644
+index 8ac18f5..7572fa6 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -42,7 +42,7 @@ ecm_generate_headers(kexiv2_CamelCase_HEADERS
+@@ -41,7 +41,7 @@ ecm_generate_headers(kexiv2_CamelCase_HEADERS
                       REQUIRED_HEADERS kexiv2_HEADERS
  )
  

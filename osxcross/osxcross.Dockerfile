@@ -68,7 +68,10 @@ RUN sudo xbps-install --yes \
     mpfr-devel          \
     libmpc-devel        \
     cmake               \
-    libxml2-devel
+    libxml2-devel	\
+    gobject-instrospection \
+    mozjs52-devel \
+    ccache
 
 
 # Install osxcross
@@ -94,10 +97,45 @@ CMD /bin/bash
 RUN sudo xbps-alternatives -s gcc
 
 # Install MXE cross-building environment
-# RUN git clone --depth 1 --branch x86_64-apple-darwin18 https://github.com/jschultz/mxe.git
-
-# ENV LDFLAGS -L/home/kdedev/mxe/usr/x86_64-apple-darwin15/lib
-# ENV CFLAGS -I/home/kdedev/mxe/usr/x86_64-apple-darwin15/include
+RUN git clone --depth 1 --branch x86_64-apple-darwin18 https://github.com/jschultz/mxe.git
 
 # Build Qt5 and other packages we'll need
-# RUN cd mxe && make qtbase
+RUN cd mxe && make qt5
+RUN cd mxe && make qttools
+RUN cd mxe && make qtmacextras
+RUN cd mxe && make qtspeech
+# RUN cd mxe && make fontconfig
+# RUN cd mxe && make dbus
+# RUN cd mxe && make icu4c
+RUN cd mxe && make libxslt
+# RUN cd mxe && make libgpg_error
+# RUN cd mxe && make libxml2
+RUN cd mxe && make llvm
+RUN cd mxe && make poppler
+RUN cd mxe && make docbook-xml
+RUN cd mxe && make docbook-xsl
+RUN cd mxe && make boost
+RUN cd mxe && make giflib
+RUN cd mxe && make libqrencode
+RUN cd mxe && make polkit
+
+# Update path
+ENV PATH /home/kdedev/mxe/usr/bin:$PATH
+
+# Fudge default cmake
+RUN ln -s /home/kdedev/mxe/usr/bin/x86_64-apple-darwin18-cmake /home/kdedev/mxe/usr/bin/cmake
+
+# Install kdesrc-build
+RUN sudo xbps-install -y git perl-YAML-LibYAML
+RUN git clone --depth 1 git://anongit.kde.org/kdesrc-build.git
+
+RUN sudo xbps-install --yes ccache
+
+# Prepare the KDE build
+RUN mkdir kde
+
+# And some useful stuff for later on
+RUN sudo xbps-install --yes bash ncurses-term vim
+COPY .bashrc /home/kdedev
+RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
+RUN mkdir .ssh

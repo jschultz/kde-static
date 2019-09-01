@@ -16,7 +16,7 @@ cd $(dirname $(realpath $0))
 if ! test -f binpkgs/proot-*.x86_64-musl.xbps; then
     # Build the initial build container
     docker build \
-        --no-cache \
+        $@ \
         --build-arg mirror=$mirror \
         --build-arg http_proxy=$http_proxy \
         --build-arg https_proxy=$https_proxy \
@@ -42,7 +42,7 @@ fi
 
 # Build the docker image
 docker build \
-    --no-cache \
+    $@ \
     --build-arg mirror=$mirror \
     --build-arg http_proxy=$http_proxy \
     --build-arg https_proxy=$https_proxy \
@@ -65,6 +65,11 @@ docker create \
     --interactive --tty \
     --name=$CONTAINER_NAME --hostname=$CONTAINER_NAME \
     $IMAGE_TAG
+
+# Pick up the built packages for next time
+rm -rf binpkgs.bak
+mv binpkgs binpkgs.bak
+docker cp $CONTAINER_NAME:/home/kdedev/void-packages/hostdir/binpkgs/ .
 
 # Prepare the KDE build
 docker cp $KDESRC_BUILDRC              $CONTAINER_NAME:/home/kdedev/kde/kdesrc-buildrc

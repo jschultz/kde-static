@@ -57,6 +57,7 @@ RUN sudo xbps-install --yes \
 # RUN cp -r /home/kdedev/void-packages/hostdir/binpkgs void-packages/masterdir/host && cd void-packages && ./xbps-src zap && ./xbps-src binary-bootstrap
 
 # Build packages
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/libglib-devel-*.xbps;          then cd void-packages && ./xbps-src pkg     libglib-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/fontconfig-devel-*.xbps;       then cd void-packages && ./xbps-src pkg -j4 fontconfig-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/dbus-devel-*.xbps;             then cd void-packages && ./xbps-src pkg -j4 dbus-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/icu-devel-*.xbps;              then cd void-packages && ./xbps-src pkg -j4 icu-devel; fi
@@ -71,9 +72,12 @@ RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/poppler-devel-*.xbps; 
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/poppler-qt5-devel-*.xbps;      then cd void-packages && ./xbps-src pkg -j4 poppler-qt5-devel; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/wayland-*.xbps;                then cd void-packages && ./xbps-src pkg -j4 wayland; fi
 RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/qrencode-*.xbps;               then cd void-packages && ./xbps-src pkg -j4 qrencode; fi
+RUN if ! ls >/dev/null 2>&1 void-packages/hostdir/binpkgs/harfbuzz-devel-*.xbps;         then cd void-packages && ./xbps-src pkg -j4 harfbuzz-devel; fi
+
+# Add graphite, exiv2
 
 # Install built packages
-RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel wayland qrencode
+RUN sudo xbps-install --repository=/home/kdedev/void-packages/hostdir/binpkgs --force --yes libglib-devel fontconfig-devel dbus-devel icu-devel libxslt-devel libgpg-error-devel libxcb-devel xcb-util-keysyms-devel libxml2-devel libglapi libGL libEGL libGLES libOSMesa libllvm7 poppler-devel poppler-qt5-devel wayland qrencode harfbuzz
 
 # Download, patch and build QT everywhere, QT webkit and friends, then delete sources
 RUN sudo xbps-install -y wget xz libaccounts-glib-devel doxygen

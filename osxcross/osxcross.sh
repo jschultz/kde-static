@@ -44,16 +44,21 @@ docker create \
     --name=$CONTAINER_NAME --hostname=$CONTAINER_NAME \
     $IMAGE_TAG
 
-exit
-
 # Prepare the KDE build
-docker cp $HOME/src/okular-static.cache/kde/source kde-osxcross:/home/kdedev/kde
-docker cp patch-kde.sh                  kde-osxcross:/home/kdedev/kde
+#docker cp $HOME/src/okular-static.cache/kde/source kde-osxcross:/home/kdedev/kde
+docker cp ../patch-kde.sh               kde-osxcross:/home/kdedev/kde
 docker cp kdesrc-buildrc-osxcross       kde-osxcross:/home/kdedev/kde/kdesrc-buildrc
-docker cp kdesrc-buildrc-sources        kde-osxcross:/home/kdedev/kde
-docker cp kf5-frameworks-build-include  kde-osxcross:/home/kdedev/kde
+docker cp ../kdesrc-buildrc-sources        kde-osxcross:/home/kdedev/kde
+docker cp ../kf5-frameworks-build-include  kde-osxcross:/home/kdedev/kde
+
+# Prebuilt executables needed for cross-building
+docker cp hostapps $CONTAINER_NAME:/home/kdedev
+
+docker start $CONTAINER_NAME
 
 docker start kde-osxcross
 
-docker exec kde-osxcross sh -c "cd kde && sh patch-kde.sh"
+exit
+
+docker exec kde-osxcross sh -c "cd kde/source && sh patch-kde.sh"
 docker exec kde-osxcross sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
