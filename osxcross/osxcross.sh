@@ -17,6 +17,7 @@ cd $(dirname $(realpath $0))
 
 # Build the docker image
 docker build \
+    $@ \
     --build-arg mirror=$mirror \
     --build-arg http_proxy=$http_proxy \
     --build-arg https_proxy=$https_proxy \
@@ -45,20 +46,34 @@ docker create \
     $IMAGE_TAG
 
 # Prepare the KDE build
-#docker cp $HOME/src/okular-static.cache/kde/source kde-osxcross:/home/kdedev/kde
-docker cp ../patch-kde.sh               kde-osxcross:/home/kdedev/kde
-docker cp kdesrc-buildrc-osxcross       kde-osxcross:/home/kdedev/kde/kdesrc-buildrc
-docker cp ../kdesrc-buildrc-sources        kde-osxcross:/home/kdedev/kde
-docker cp ../kf5-frameworks-build-include  kde-osxcross:/home/kdedev/kde
+#docker cp $HOME/src/okular-static.cache/kde/source $CONTAINER_NAME:/home/kdedev/kde
+docker cp ../patch-kde.sh               $CONTAINER_NAME:/home/kdedev/kde
+docker cp kdesrc-buildrc-osxcross       $CONTAINER_NAME:/home/kdedev/kde/kdesrc-buildrc
+docker cp ../kdesrc-buildrc-sources        $CONTAINER_NAME:/home/kdedev/kde
+docker cp ../kf5-frameworks-build-include  $CONTAINER_NAME:/home/kdedev/kde
 
 # Prebuilt executables needed for cross-building
-docker cp hostapps $CONTAINER_NAME:/home/kdedev
+docker cp ../hostapps $CONTAINER_NAME:/home/kdedev
 
 docker start $CONTAINER_NAME
 
-docker start kde-osxcross
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build         \
+                                    --rc-file=\$HOME/kde/kdesrc-buildrc     \
+                                    --build-only                            \
+                                    --refresh-build                         \
+                                    --include-dependencies                  \
+                                    frameworks;                             \
+                                exit 0"   # Don't worry about failures
+docker exec $CONTAINER_NAME sh -c "\$HOME/kdesrc-build/kdesrc-build         \
+                                    --rc-file=\$HOME/kde/kdesrc-buildrc     \
+                                    --build-only                            \
+                                    --refresh-build                         \
+                                    --no-include-dependencies               \
+                                    okular"
 
-exit
-
-docker exec kde-osxcross sh -c "cd kde/source && sh patch-kde.sh"
-docker exec kde-osxcross sh -c "\$HOME/kdesrc-build/kdesrc-build --rc-file=\$HOME/kde/kdesrc-buildrc --build-only --refresh-build --include-dependencies frameworks"
+mkdir $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources
+cp $INSTALLDIR/share/okular/drawingtools.xml $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources
+cp $INSTALLDIR/share/kxmlgui5/okular/part.rc $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources
+cp $INSTALLDIR/share/kxmlgui5/okular/shell.rc $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources
+cp $INSTALLDIR/etc/xdg/ui/ui_standards.rc $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources
+cp $INSTALLDIR/share/icons/breeze/breeze-icons.rcc $INSTALLDIR/Applications/KDE/okular.app/Contents/Resources/icontheme.rcc

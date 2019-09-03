@@ -69,7 +69,7 @@ RUN sudo xbps-install --yes \
     libmpc-devel        \
     cmake               \
     libxml2-devel	\
-    gobject-instrospection \
+    gobject-introspection \
     mozjs52-devel \
     ccache
 
@@ -100,16 +100,9 @@ RUN sudo xbps-alternatives -s gcc
 RUN git clone --depth 1 --branch x86_64-apple-darwin18 https://github.com/jschultz/mxe.git
 
 # Build Qt5 and other packages we'll need
+RUN cd mxe && make cmake-conf
 RUN cd mxe && make qt5
-RUN cd mxe && make qttools
-RUN cd mxe && make qtmacextras
-RUN cd mxe && make qtspeech
-# RUN cd mxe && make fontconfig
-# RUN cd mxe && make dbus
-# RUN cd mxe && make icu4c
 RUN cd mxe && make libxslt
-# RUN cd mxe && make libgpg_error
-# RUN cd mxe && make libxml2
 RUN cd mxe && make llvm
 RUN cd mxe && make poppler
 RUN cd mxe && make docbook-xml
@@ -117,7 +110,6 @@ RUN cd mxe && make docbook-xsl
 RUN cd mxe && make boost
 RUN cd mxe && make giflib
 RUN cd mxe && make libqrencode
-RUN cd mxe && make polkit
 
 # Update path
 ENV PATH /home/kdedev/mxe/usr/bin:$PATH
@@ -138,4 +130,3 @@ RUN mkdir kde
 RUN sudo xbps-install --yes bash ncurses-term vim
 COPY .bashrc /home/kdedev
 RUN sudo xbps-install -y openssh && sudo ssh-keygen -A
-RUN mkdir .ssh
